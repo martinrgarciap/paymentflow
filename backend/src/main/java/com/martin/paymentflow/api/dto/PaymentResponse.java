@@ -1,77 +1,30 @@
-package com.martin.paymentflow.api.entity;
-
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+package com.martin.paymentflow.api.dto;
 
 import com.martin.paymentflow.api.enums.CurrencyCode;
 import com.martin.paymentflow.api.enums.PaymentStatus;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
+public class PaymentResponse {
 
-@Entity
-@Table(name = "payments")
-
-public class Payment {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "transaction_id", nullable= false, unique = true, length=50)
     private String transactionId;
-
-    @Column(name="sender_name", nullable=false, length=100)
     private String senderName;
-
-    @Column(name="recipient_name", nullable=false, length=100)
     private String recipientName;
-
-    @Column(nullable=false, precision=12, scale=2)
     private BigDecimal amount;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable=false, length=10)
     private CurrencyCode currency;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable=false, length=20)
     private PaymentStatus status;
-
-    @Column(name = "reference_note", length = 255)
     private String referenceNote;
-
-    @Column(name = "risk_flag", nullable = false)
     private boolean riskFlag;
-
-    @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
-
-
-    public Payment() {
-
-    }
-
-    public Long getId() {
-        return id;
-    }
 
     public String getTransactionId() {
         return transactionId;
     }
 
     public void setTransactionId(String transactionId) {
-        this.transactionId  = transactionId;
+        this.transactionId = transactionId;
     }
 
     public String getSenderName() {
