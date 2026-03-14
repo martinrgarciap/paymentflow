@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -21,5 +23,15 @@ public class PaymentController {
     @ResponseStatus(HttpStatus.CREATED)
     public PaymentResponse createPayment(@Valid @RequestBody CreatePaymentRequest request) {
         return paymentService.createPayment(request);
+    }
+
+    @GetMapping
+    public List<PaymentResponse> getAllPayments() {
+        return paymentService.getAllPayments();
+    }
+
+    @GetMapping("/{transactionId}")
+    public PaymentResponse getPaymentByTransactionId(@PathVariable String transactionId) {
+        return paymentService.getPaymentByTransactionId(transactionId);
     }
 }

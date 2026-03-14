@@ -1,14 +1,17 @@
 package com.martin.paymentflow.api.service;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.martin.paymentflow.api.dto.CreatePaymentRequest;
 import com.martin.paymentflow.api.dto.PaymentResponse;
 import com.martin.paymentflow.api.entity.Payment;
 import com.martin.paymentflow.api.enums.PaymentStatus;
 import com.martin.paymentflow.api.repository.PaymentRepository;
-import org.springframework.stereotype.Service;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Service
 public class PaymentService {
@@ -55,5 +58,18 @@ public class PaymentService {
 
     private String generateTransactionId() {
         return "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+    public List<PaymentResponse> getAllPayments() {
+        return paymentRepository.findAll()
+            .stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    public PaymentResponse getPaymentByTransactionId(String transactionId) {
+        Payment payment = paymentRepository.findByTransactionId(transactionId)
+            .orElseThrow(() -> new RuntimeException("Payment not found: " + transactionId));
+        return mapToResponse(payment);
     }
 }
