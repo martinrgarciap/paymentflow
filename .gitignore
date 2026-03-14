@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# IntelliJ
+.idea/
+*.iml
+
+# Java / Maven
+target/
+
+# Node
+node_modules/
+dist/
+
+# Env files
+.env
