@@ -10,4 +10,10 @@ import java.util.List;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByTransactionId(String transactionId);
     List<Payment> findByStatus(PaymentStatus status);
+
+    List<Payment> findByTransactionIdContainingIgnoreCaseOrSenderNameContainingIgnoreCaseOrRecipientNameContainingIgnoreCase(
+            String transactionId,
+            String senderName,
+            String recipientName
+    );
 }

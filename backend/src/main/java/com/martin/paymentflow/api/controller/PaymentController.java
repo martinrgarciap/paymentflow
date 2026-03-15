@@ -46,4 +46,9 @@ public class PaymentController {
     ) {
         return paymentService.updatePaymentStatus(transactionId, request);
     }
+
+    @GetMapping("/search")
+    public List<PaymentResponse> searchPayments(@RequestParam String query) {
+        return paymentService.searchPayments(query);
+    }
 }

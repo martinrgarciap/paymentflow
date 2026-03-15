@@ -87,4 +87,15 @@ public class PaymentService {
 
         return mapToResponse(updatedPayment);
     }
+
+    public List<PaymentResponse> searchPayments(String query) {
+        String trimmedQuery = query.trim();
+
+        List<Payment> payments = paymentRepository
+            .findByTransactionIdContainingIgnoreCaseOrSenderNameContainingIgnoreCaseOrRecipientNameContainingIgnoreCase(trimmedQuery, trimmedQuery, trimmedQuery);
+
+        return payments.stream()
+            .map(this::mapToResponse)
+            .toList();
+    }
 }
