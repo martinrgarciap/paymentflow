@@ -3,6 +3,7 @@ package com.martin.paymentflow.api.controller;
 import com.martin.paymentflow.api.dto.CreatePaymentRequest;
 import com.martin.paymentflow.api.dto.PaymentResponse;
 import com.martin.paymentflow.api.service.PaymentService;
+import com.martin.paymentflow.api.dto.UpdatePaymentStatusRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -33,5 +34,13 @@ public class PaymentController {
     @GetMapping("/{transactionId}")
     public PaymentResponse getPaymentByTransactionId(@PathVariable String transactionId) {
         return paymentService.getPaymentByTransactionId(transactionId);
+    }
+
+    @PatchMapping("/{transactionId}/status")
+    public PaymentResponse updatePaymentStatus(
+        @PathVariable String transactionId,
+        @Valid @RequestBody UpdatePaymentStatusRequest request
+    ) {
+        return paymentService.updatePaymentStatus(transactionId, request);
     }
 }

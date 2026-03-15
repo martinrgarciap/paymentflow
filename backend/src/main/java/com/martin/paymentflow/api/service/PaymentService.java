@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 
 import com.martin.paymentflow.api.dto.CreatePaymentRequest;
 import com.martin.paymentflow.api.dto.PaymentResponse;
+import com.martin.paymentflow.api.dto.UpdatePaymentStatusRequest;
 import com.martin.paymentflow.api.entity.Payment;
 import com.martin.paymentflow.api.enums.PaymentStatus;
+import com.martin.paymentflow.api.exception.ResourceNotFoundException;
 import com.martin.paymentflow.api.repository.PaymentRepository;
 
 @Service
@@ -69,7 +71,18 @@ public class PaymentService {
 
     public PaymentResponse getPaymentByTransactionId(String transactionId) {
         Payment payment = paymentRepository.findByTransactionId(transactionId)
-            .orElseThrow(() -> new RuntimeException("Payment not found: " + transactionId));
+            .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + transactionId));
         return mapToResponse(payment);
+    }
+
+    public PaymentResponse updatePaymentStatus(String transactionId, UpdatePaymentStatusRequest request) {
+        Payment payment = paymentRepository.findByTransactionId(transactionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + transactionId));
+        payment.setStatus(request.getStatus());
+        payment.setUpdatedAt(OffsetDateTime.now());
+
+        Payment updatedPayment = paymentRepository.save(payment);
+
+        return mapToResponse(updatedPayment);
     }
 }
