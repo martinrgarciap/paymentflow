@@ -1,9 +1,15 @@
 package com.martin.paymentflow.api.service;
 
+import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasRecipientName;
+import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasSenderName;
+import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasStatus;
+import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasTransactionId;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.martin.paymentflow.api.dto.CreatePaymentRequest;
@@ -93,6 +99,21 @@ public class PaymentService {
 
         List<Payment> payments = paymentRepository
             .findByTransactionIdContainingIgnoreCaseOrSenderNameContainingIgnoreCaseOrRecipientNameContainingIgnoreCase(trimmedQuery, trimmedQuery, trimmedQuery);
+
+        return payments.stream()
+            .map(this::mapToResponse)
+            .toList();
+    }
+
+    public List<PaymentResponse> filterPayments(String transactionId, String senderName,
+                                     String recipientName, PaymentStatus status) {
+        Specification<Payment> spec = Specification
+            .where(hasTransactionId(transactionId))
+            .and(hasSenderName(senderName))
+            .and(hasRecipientName(recipientName))
+            .and(hasStatus(status));
+
+        List<Payment> payments = paymentRepository.findAll(spec);
 
         return payments.stream()
             .map(this::mapToResponse)

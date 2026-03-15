@@ -51,4 +51,14 @@ public class PaymentController {
     public List<PaymentResponse> searchPayments(@RequestParam String query) {
         return paymentService.searchPayments(query);
     }
+
+    @GetMapping("/filter")
+    public List<PaymentResponse> filterPayments(
+        @RequestParam(required = false) String transactionId,
+        @RequestParam(required = false) String senderName,
+        @RequestParam(required = false) String recipientName,
+        @RequestParam(required = false) PaymentStatus status
+    ) {
+        return paymentService.filterPayments(transactionId, senderName, recipientName, status);
+    }  
 }
