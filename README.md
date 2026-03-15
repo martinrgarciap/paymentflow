@@ -1,119 +1,92 @@
 # PaymentFlow
 
-PaymentFlow is a full-stack payments dashboard project built to simulate a modern payment operations system.
+A full-stack payments dashboard simulating a modern payment operations system. Built with Spring Boot and React.
 
-The project is designed to showcase how a frontend application can interact with a backend API to create, manage, search, and update payment records. It focuses on building a clean API, structured backend architecture, and a frontend that can later visualize and manage payment activity.
+---
 
-## Overview
+## Project Structure
 
-The application allows users to:
+```
+paymentflow/
+├── backend/    # Spring Boot REST API
+└── frontend/   # React + TypeScript dashboard
+```
 
-- create payment records
-- view all payments
-- retrieve individual payments by transaction ID
-- update payment statuses
-- search and filter payments by key fields
-- work with realistic payment-related data such as amount, currency, and status
-
-The project is being built to demonstrate practical full-stack development using Java, Spring Boot, PostgreSQL, React, and TypeScript.
+---
 
 ## Tech Stack
 
-### Backend
+**Backend**
 
-- Java
-- Spring Boot
-- Spring Data JPA
-- Hibernate
+- Java, Spring Boot, Spring Data JPA, Hibernate
 - PostgreSQL
 - Maven
-- Spring Validation
-- Spring Boot Actuator
+- Spring Validation, Spring Boot Actuator
 
-### Testing
+**Frontend**
 
-- JUnit 5
-- Mockito
-- MockMvc
-- H2 in-memory database for integration tests
+- React, TypeScript
+
+**Testing**
+
+- JUnit 5, Mockito, MockMvc
+- H2 in-memory database (integration tests)
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Java 17+
+- Node.js 18+
+- PostgreSQL running locally
+
+### Backend
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Runs on `http://localhost:8080`
 
 ### Frontend
 
-- React
-- TypeScript
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## API Summary
+---
 
-The backend exposes a REST API for managing payment data.
+## API Reference
 
-### Main capabilities
+| Method  | Endpoint                               | Description                |
+| ------- | -------------------------------------- | -------------------------- |
+| `POST`  | `/api/payments`                        | Create a payment           |
+| `GET`   | `/api/payments`                        | Get all payments           |
+| `GET`   | `/api/payments/{transactionId}`        | Get payment by ID          |
+| `PATCH` | `/api/payments/{transactionId}/status` | Update payment status      |
+| `GET`   | `/api/payments/filter`                 | Filter and search payments |
+| `GET`   | `/actuator/health`                     | Health check               |
 
-- create payments
-- retrieve all payments
-- retrieve a payment by transaction ID
-- update payment status
-- filter and search payment records
-- expose a health check endpoint
+---
 
-### Current API endpoints
-
-- `POST /api/payments`
-- `GET /api/payments`
-- `GET /api/payments/{transactionId}`
-- `PATCH /api/payments/{transactionId}/status`
-- `GET /api/payments/filter`
-- `GET /actuator/health`
-
-## What the API Uses
-
-The API uses:
-
-- Spring Boot for application setup and REST endpoints
-- Spring Data JPA and Hibernate for persistence
-- PostgreSQL for development data storage
-- H2 for integration testing
-- validation annotations for request validation
-- global exception handling for cleaner API responses
-
-## What the API Does
-
-The API handles the core payment workflow for the project, including:
-
-- receiving payment data from clients
-- validating request input
-- generating and storing payment records
-- tracking payment status
-- returning structured JSON responses
-- supporting search and filtering features
-- exposing health information for the running application
-
-## Running the Backend
-
-From the `backend` folder:
+## Running Tests
 
 ```bash
-mvn spring-boot:run
-
-The API runs locally on:
-
-http://localhost:8080
-Running Tests
-
-From the backend folder:
-
+cd backend
 mvn test
-Project Structure
-paymentflow/
-  backend/
-  frontend/
-  README.md
-Current Status
-
-The backend API is implemented and tested.
-
-The frontend is the next major phase of the project and will consume the existing API to display and manage payment data through a dashboard interface.
-
-Purpose
-
-This project was created to practice building a real-world style full-stack application with a strong backend foundation and a frontend that can grow on top of it.
 ```
+
+---
+
+## Features
+
+- Create and manage payment records
+- Search and filter by transaction ID, sender, recipient, and status
+- Automatic risk flagging for high-value transactions
+- Structured error handling and input validation
+- Health monitoring via Spring Actuator
