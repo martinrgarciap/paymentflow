@@ -3,6 +3,7 @@ package com.martin.paymentflow.api.controller;
 import com.martin.paymentflow.api.dto.CreatePaymentRequest;
 import com.martin.paymentflow.api.dto.PaymentResponse;
 import com.martin.paymentflow.api.service.PaymentService;
+import com.martin.paymentflow.api.enums.PaymentStatus;
 import com.martin.paymentflow.api.dto.UpdatePaymentStatusRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,8 +28,10 @@ public class PaymentController {
     }
 
     @GetMapping
-    public List<PaymentResponse> getAllPayments() {
-        return paymentService.getAllPayments();
+    public List<PaymentResponse> getAllPayments(
+            @RequestParam(required = false) PaymentStatus status
+    ) {
+        return paymentService.getAllPayments(status);
     }
 
     @GetMapping("/{transactionId}")

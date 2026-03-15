@@ -3,7 +3,6 @@ package com.martin.paymentflow.api.service;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -62,11 +61,14 @@ public class PaymentService {
         return "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    public List<PaymentResponse> getAllPayments() {
-        return paymentRepository.findAll()
-            .stream()
+    public List<PaymentResponse> getAllPayments(PaymentStatus status) {
+        List<Payment> payments = (status == null)
+                ? paymentRepository.findAll()
+                : paymentRepository.findByStatus(status);
+
+        return payments.stream()
             .map(this::mapToResponse)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     public PaymentResponse getPaymentByTransactionId(String transactionId) {
