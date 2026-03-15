@@ -8,17 +8,17 @@ import com.martin.paymentflow.api.enums.PaymentStatus;
 public class PaymentSpecifications {
 
     public static Specification<Payment> hasTransactionId(String transactionId) {
-        return (root, query, cb) -> transactionId == null ? null
+        return (root, query, cb) -> transactionId == null || transactionId.trim().isEmpty() ? null
             : cb.like(cb.lower(root.get("transactionId")), "%" + transactionId.toLowerCase() + "%");
     }
 
     public static Specification<Payment> hasSenderName(String senderName) {
-        return (root, query, cb) -> senderName == null ? null
+        return (root, query, cb) -> senderName == null || senderName.trim().isEmpty() ? null
             : cb.like(cb.lower(root.get("senderName")), "%" + senderName.toLowerCase() + "%");
     }
 
     public static Specification<Payment> hasRecipientName(String recipientName) {
-        return (root, query, cb) -> recipientName == null ? null
+        return (root, query, cb) -> recipientName == null || recipientName.trim().isEmpty() ? null
             : cb.like(cb.lower(root.get("recipientName")), "%" + recipientName.toLowerCase() + "%");
     }
 
