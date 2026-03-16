@@ -6,9 +6,10 @@ import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasSta
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasTransactionId;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -67,14 +68,12 @@ public class PaymentService {
         return "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    public List<PaymentResponse> getAllPayments(PaymentStatus status) {
-        List<Payment> payments = (status == null)
-                ? paymentRepository.findAll()
-                : paymentRepository.findByStatus(status);
+    public Page<PaymentResponse> getAllPayments(PaymentStatus status, Pageable pageable) {
+    Page<Payment> payments = (status == null)
+            ? paymentRepository.findAll(pageable)
+            : paymentRepository.findByStatus(status, pageable);
 
-        return payments.stream()
-            .map(this::mapToResponse)
-            .toList();
+    return payments.map(this::mapToResponse);
     }
 
     public PaymentResponse getPaymentByTransactionId(String transactionId) {
@@ -94,29 +93,30 @@ public class PaymentService {
         return mapToResponse(updatedPayment);
     }
 
-    public List<PaymentResponse> searchPayments(String query) {
+    public Page<PaymentResponse> searchPayments(String query, Pageable pageable) {
         String trimmedQuery = query.trim();
 
-        List<Payment> payments = paymentRepository
-            .findByTransactionIdContainingIgnoreCaseOrSenderNameContainingIgnoreCaseOrRecipientNameContainingIgnoreCase(trimmedQuery, trimmedQuery, trimmedQuery);
+        Page<Payment> payments = paymentRepository
+            .findByTransactionIdContainingIgnoreCaseOrSenderNameContainingIgnoreCaseOrRecipientNameContainingIgnoreCase(
+                trimmedQuery, 
+                trimmedQuery, 
+                trimmedQuery,
+                pageable
+            );
 
-        return payments.stream()
-            .map(this::mapToResponse)
-            .toList();
+        return payments.map(this::mapToResponse);
     }
 
-    public List<PaymentResponse> filterPayments(String transactionId, String senderName,
-                                     String recipientName, PaymentStatus status) {
+    public Page<PaymentResponse> filterPayments(String transactionId, String senderName,
+                                    String recipientName, PaymentStatus status, Pageable pageable) {
         Specification<Payment> spec = Specification
             .where(hasTransactionId(transactionId))
             .and(hasSenderName(senderName))
             .and(hasRecipientName(recipientName))
             .and(hasStatus(status));
 
-        List<Payment> payments = paymentRepository.findAll(spec);
+        Page<Payment> payments = paymentRepository.findAll(spec, pageable);
 
-        return payments.stream()
-            .map(this::mapToResponse)
-            .toList();
+        return payments.map(this::mapToResponse);
     }
 }

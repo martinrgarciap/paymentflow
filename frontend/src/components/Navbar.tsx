@@ -1,24 +1,52 @@
+import { NavLink } from "react-router-dom";
+
 export default function Navbar() {
   return (
-    <nav className="bg-[#1e3a5f] text-white px-8 py-3 flex items-center justify-between">
+    <nav className="bg-[#1e3a5f] text-white px-8 py-0 flex items-center justify-between shadow-lg">
       <div className="flex items-center gap-10">
-        <div className="flex items-center gap-2 font-bold text-xl">
-          <div className="w-8 h-8 bg-blue-400 rounded-full flex items-center justify-center text-sm">
+        <div className="flex items-center gap-2 font-bold text-lg py-4">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black shadow-md">
             P
           </div>
-          PaymentFlow
+          <span className="tracking-tight">PaymentFlow</span>
         </div>
-        <div className="flex gap-6 text-sm">
-          <button className="border-b-2 border-blue-400 pb-1 font-medium">
-            Dashboard
-          </button>
-          <button className="text-gray-300 hover:text-white">
-            Transactions
-          </button>
-          <button className="text-gray-300 hover:text-white">Audit Log</button>
+
+        <div className="flex h-full">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors duration-150
+               ${
+                 isActive
+                   ? "border-blue-400 text-white"
+                   : "border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500"
+               }`
+            }
+          >
+            <span>⊞</span> Dashboard
+          </NavLink>
+          <NavLink
+            to="/send"
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors duration-150
+               ${
+                 isActive
+                   ? "border-blue-400 text-white"
+                   : "border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500"
+               }`
+            }
+          >
+            <span>↗</span> Send Payment
+          </NavLink>
         </div>
       </div>
-      <div className="text-sm text-gray-300">Admin User ▾</div>
+
+      <div className="flex items-center gap-2 text-sm text-gray-300 py-4">
+        <div className="w-7 h-7 rounded-full bg-blue-500/40 flex items-center justify-center text-xs font-bold">
+          A
+        </div>
+        Admin User <span className="text-gray-500">▾</span>
+      </div>
     </nav>
   );
 }

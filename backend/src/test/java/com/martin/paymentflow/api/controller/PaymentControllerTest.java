@@ -2,6 +2,7 @@ package com.martin.paymentflow.api.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -18,6 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -100,8 +104,8 @@ class PaymentControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/payments should return all payments")
-    void getAllPayments_ShouldReturnList() throws Exception {
+        @DisplayName("GET /api/payments should return paginated payments")
+        void getAllPayments_ShouldReturnPage() throws Exception {
         List<PaymentResponse> responses = List.of(
                 buildPaymentResponse(
                         "TXN-001", "John Smith", "Alice Wong",
@@ -115,14 +119,19 @@ class PaymentControllerTest {
                 )
         );
 
-        when(paymentService.getAllPayments(null)).thenReturn(responses);
+        Page<PaymentResponse> page = new PageImpl<>(responses, PageRequest.of(0, 50), responses.size());
+
+        when(paymentService.getAllPayments(isNull(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/payments"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].transactionId").value("TXN-001"))
-                .andExpect(jsonPath("$[1].transactionId").value("TXN-002"));
-    }
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].transactionId").value("TXN-001"))
+                .andExpect(jsonPath("$.content[1].transactionId").value("TXN-002"))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.number").value(0))
+                .andExpect(jsonPath("$.size").value(50));
+        }
 
     @Test
     @DisplayName("GET /api/payments/{transactionId} should return one payment")
@@ -186,6 +195,56 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.transactionId").value("TXN-001"))
                 .andExpect(jsonPath("$.status").value("COMPLETED"));
     }
+
+        @Test
+        @DisplayName("GET /api/payments/search should return paginated search results")
+        void searchPayments_ShouldReturnPage() throws Exception {
+        List<PaymentResponse> responses = List.of(
+                buildPaymentResponse(
+                        "TXN-SEARCH-001", "John Smith", "Alice Wong",
+                        new BigDecimal("1200.50"), CurrencyCode.CAD,
+                        PaymentStatus.PENDING, "Invoice payment", false
+                )
+        );
+
+        Page<PaymentResponse> page = new PageImpl<>(responses, PageRequest.of(0, 50), responses.size());
+
+        when(paymentService.searchPayments(eq("john"), any())).thenReturn(page);
+
+        mockMvc.perform(get("/api/payments/search").param("query", "john"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].transactionId").value("TXN-SEARCH-001"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+        }
+
+        @Test
+        @DisplayName("GET /api/payments/filter should return paginated filtered results")
+        void filterPayments_ShouldReturnPage() throws Exception {
+        List<PaymentResponse> responses = List.of(
+                buildPaymentResponse(
+                        "TXN-FILTER-001", "Sarah Patel", "Tom Brown",
+                        new BigDecimal("7000.00"), CurrencyCode.USD,
+                        PaymentStatus.FLAGGED, "High value transfer", true
+                )
+        );
+
+        Page<PaymentResponse> page = new PageImpl<>(responses, PageRequest.of(0, 50), responses.size());
+
+        when(paymentService.filterPayments(
+                eq(null),
+                eq(null),
+                eq(null),
+                eq(PaymentStatus.FLAGGED),
+                any()
+        )).thenReturn(page);
+
+        mockMvc.perform(get("/api/payments/filter").param("status", "FLAGGED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].transactionId").value("TXN-FILTER-001"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+        }
 
     private PaymentResponse buildPaymentResponse(
             String transactionId,

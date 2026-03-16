@@ -1,22 +1,29 @@
 package com.martin.paymentflow.api.integration;
 
-import com.martin.paymentflow.api.dto.CreatePaymentRequest;
-import com.martin.paymentflow.api.entity.Payment;
-import com.martin.paymentflow.api.enums.CurrencyCode;
-import com.martin.paymentflow.api.repository.PaymentRepository;
-import com.martin.paymentflow.api.enums.PaymentStatus;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.*;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestTemplate;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.client.RestTemplate;
+
+import com.martin.paymentflow.api.dto.CreatePaymentRequest;
+import com.martin.paymentflow.api.entity.Payment;
+import com.martin.paymentflow.api.enums.CurrencyCode;
+import com.martin.paymentflow.api.enums.PaymentStatus;
+import com.martin.paymentflow.api.repository.PaymentRepository;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test") 
@@ -98,12 +105,14 @@ class PaymentIntegrationTest {
         paymentRepository.save(payment1);
         paymentRepository.save(payment2);
 
-        String url = "http://localhost:" + port + "/api/payments";
+        String url = "http://localhost:" + port + "/api/payments?page=0&size=10";
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+        assertTrue(response.getBody().contains("\"content\""));
+        assertTrue(response.getBody().contains("\"totalElements\""));
         assertTrue(response.getBody().contains("TXN-INT-001"));
         assertTrue(response.getBody().contains("John Smith"));
         assertTrue(response.getBody().contains("TXN-INT-002"));
