@@ -64,10 +64,11 @@ public class PaymentController {
     @GetMapping("/search")
     public Page<PaymentResponse> searchPayments(
         @RequestParam String query,
+        @RequestParam(required = false) PaymentStatus status,
         @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC)
         Pageable pageable
     ) {
-        return paymentService.searchPayments(query, pageable);
+        return paymentService.searchPayments(query, status, pageable);
     }
 
     @GetMapping("/filter")
@@ -76,7 +77,7 @@ public class PaymentController {
         @RequestParam(required = false) String senderName,
         @RequestParam(required = false) String recipientName,
         @RequestParam(required = false) PaymentStatus status,
-        @PageableDefault(size = 100, sort = "updateddAt", direction = Sort.Direction.DESC)
+        @PageableDefault(size = 100, sort = "updatedAt", direction = Sort.Direction.DESC)
         Pageable pageable
     ) {
         return paymentService.filterPayments(transactionId, senderName, recipientName, status, pageable);

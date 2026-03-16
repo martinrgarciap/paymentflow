@@ -4,6 +4,7 @@ import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasRec
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasSenderName;
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasStatus;
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasTransactionId;
+import static com.martin.paymentflow.api.repository.PaymentSpecifications.matchesSearchQuery;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -39,7 +40,7 @@ public class PaymentService {
         payment.setAmount(request.getAmount());
         payment.setCurrency(request.getCurrency());
         payment.setReferenceNote(request.getReferenceNote());
-        payment.setStatus(PaymentStatus.PENDING);
+        payment.setStatus(request.getAmount().doubleValue() > 5000 ? PaymentStatus.PENDING : PaymentStatus.COMPLETED);
         payment.setRiskFlag(request.getAmount().doubleValue() > 5000);
         payment.setCreatedAt(OffsetDateTime.now());
         payment.setUpdatedAt(OffsetDateTime.now());
@@ -93,16 +94,12 @@ public class PaymentService {
         return mapToResponse(updatedPayment);
     }
 
-    public Page<PaymentResponse> searchPayments(String query, Pageable pageable) {
-        String trimmedQuery = query.trim();
+    public Page<PaymentResponse> searchPayments(String query, PaymentStatus status, Pageable pageable) {
+        Specification<Payment> spec = Specification
+            .where(matchesSearchQuery(query))
+            .and(hasStatus(status));
 
-        Page<Payment> payments = paymentRepository
-            .findByTransactionIdContainingIgnoreCaseOrSenderNameContainingIgnoreCaseOrRecipientNameContainingIgnoreCase(
-                trimmedQuery, 
-                trimmedQuery, 
-                trimmedQuery,
-                pageable
-            );
+        Page<Payment> payments = paymentRepository.findAll(spec, pageable);
 
         return payments.map(this::mapToResponse);
     }

@@ -73,7 +73,7 @@ export default function StatCard({
         </div>
         <p
           className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${
-            active ? "text-white/80" : borderColor
+            active ? "text-white/80" : `${borderColor} ${textColor}`
           }`}
         >
           {label}

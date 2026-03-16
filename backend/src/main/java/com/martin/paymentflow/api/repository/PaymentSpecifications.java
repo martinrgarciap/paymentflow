@@ -26,4 +26,19 @@ public class PaymentSpecifications {
         return (root, query, cb) -> status == null ? null
             : cb.equal(root.get("status"), status);
     }
+    public static Specification<Payment> matchesSearchQuery(String queryText) {
+        return (root, query, cb) -> {
+            if (queryText == null || queryText.trim().isEmpty()) {
+                return null;
+            }
+
+            String likeQuery = "%" + queryText.trim().toLowerCase() + "%";
+
+            return cb.or(
+                cb.like(cb.lower(root.get("transactionId")), likeQuery),
+                cb.like(cb.lower(root.get("senderName")), likeQuery),
+                cb.like(cb.lower(root.get("recipientName")), likeQuery)
+            );
+        };
+    }
 }

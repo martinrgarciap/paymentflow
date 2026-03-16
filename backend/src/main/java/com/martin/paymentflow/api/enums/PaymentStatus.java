@@ -4,6 +4,5 @@ public enum PaymentStatus {
     PENDING,
     COMPLETED,
     FAILED,
-    FLAGGED,
     REVERSED
 }

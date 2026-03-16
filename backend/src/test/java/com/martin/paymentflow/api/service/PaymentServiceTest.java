@@ -59,7 +59,7 @@ class PaymentServiceTest {
         savedPayment.setAmount(createPaymentRequest.getAmount());
         savedPayment.setCurrency(createPaymentRequest.getCurrency());
         savedPayment.setReferenceNote(createPaymentRequest.getReferenceNote());
-        savedPayment.setStatus(PaymentStatus.PENDING);
+        savedPayment.setStatus(PaymentStatus.COMPLETED);
         savedPayment.setRiskFlag(false);
         savedPayment.setCreatedAt(OffsetDateTime.now());
         savedPayment.setUpdatedAt(OffsetDateTime.now());
@@ -77,11 +77,11 @@ class PaymentServiceTest {
         assertEquals("Alice Wong", capturedPayment.getRecipientName());
         assertEquals(new BigDecimal("1200.50"), capturedPayment.getAmount());
         assertEquals(CurrencyCode.CAD, capturedPayment.getCurrency());
-        assertEquals(PaymentStatus.PENDING, capturedPayment.getStatus());
+        assertEquals(PaymentStatus.COMPLETED, capturedPayment.getStatus());
         assertFalse(capturedPayment.isRiskFlag());
 
         assertEquals("TXN-ABC12345", response.getTransactionId());
-        assertEquals(PaymentStatus.PENDING, response.getStatus());
+        assertEquals(PaymentStatus.COMPLETED, response.getStatus());
     }
 
     @Test
@@ -121,7 +121,7 @@ class PaymentServiceTest {
         payment.setRecipientName("Alice Wong");
         payment.setAmount(new BigDecimal("1200.50"));
         payment.setCurrency(CurrencyCode.CAD);
-        payment.setStatus(PaymentStatus.PENDING);
+        payment.setStatus(PaymentStatus.COMPLETED);
         payment.setReferenceNote("Invoice payment");
         payment.setRiskFlag(false);
         payment.setCreatedAt(OffsetDateTime.now());
@@ -133,7 +133,7 @@ class PaymentServiceTest {
 
         assertEquals("TXN-SEED-001", response.getTransactionId());
         assertEquals("John Smith", response.getSenderName());
-        assertEquals(PaymentStatus.PENDING, response.getStatus());
+        assertEquals(PaymentStatus.COMPLETED, response.getStatus());
     }
 
     @Test

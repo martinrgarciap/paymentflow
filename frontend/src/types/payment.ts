@@ -19,3 +19,12 @@ export interface Payment {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PagedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  last: boolean;
+}

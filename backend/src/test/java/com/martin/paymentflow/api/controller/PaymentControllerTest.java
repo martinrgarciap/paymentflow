@@ -115,7 +115,7 @@ class PaymentControllerTest {
                 buildPaymentResponse(
                         "TXN-002", "Sarah Patel", "Tom Brown",
                         new BigDecimal("7000.00"), CurrencyCode.USD,
-                        PaymentStatus.FLAGGED, "High value transfer", true
+                        PaymentStatus.PENDING, "High value transfer", true
                 )
         );
 
@@ -209,7 +209,7 @@ class PaymentControllerTest {
 
         Page<PaymentResponse> page = new PageImpl<>(responses, PageRequest.of(0, 50), responses.size());
 
-        when(paymentService.searchPayments(eq("john"), any())).thenReturn(page);
+        when(paymentService.searchPayments(eq("john"), isNull(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/payments/search").param("query", "john"))
                 .andExpect(status().isOk())
@@ -225,7 +225,7 @@ class PaymentControllerTest {
                 buildPaymentResponse(
                         "TXN-FILTER-001", "Sarah Patel", "Tom Brown",
                         new BigDecimal("7000.00"), CurrencyCode.USD,
-                        PaymentStatus.FLAGGED, "High value transfer", true
+                        PaymentStatus.PENDING, "High value transfer", true
                 )
         );
 
@@ -235,11 +235,11 @@ class PaymentControllerTest {
                 eq(null),
                 eq(null),
                 eq(null),
-                eq(PaymentStatus.FLAGGED),
+                eq(PaymentStatus.PENDING),
                 any()
         )).thenReturn(page);
 
-        mockMvc.perform(get("/api/payments/filter").param("status", "FLAGGED"))
+        mockMvc.perform(get("/api/payments/filter").param("status", "PENDING"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].transactionId").value("TXN-FILTER-001"))

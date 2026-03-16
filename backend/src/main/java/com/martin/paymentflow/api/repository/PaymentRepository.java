@@ -18,6 +18,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long>, JpaSpec
             String transactionId,
             String senderName,
             String recipientName,
+            PaymentStatus status,
             Pageable pageable
     );
  

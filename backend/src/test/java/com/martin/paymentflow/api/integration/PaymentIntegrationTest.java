@@ -64,7 +64,7 @@ class PaymentIntegrationTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("Integration Test Sender"));
         assertTrue(response.getBody().contains("Integration Test Recipient"));
-        assertTrue(response.getBody().contains("PENDING"));
+        assertTrue(response.getBody().contains("COMPLETED"));
 
         assertEquals(1, paymentRepository.count());
 
@@ -96,7 +96,7 @@ class PaymentIntegrationTest {
         payment2.setRecipientName("Tom Brown");
         payment2.setAmount(new BigDecimal("7000.00"));
         payment2.setCurrency(CurrencyCode.USD);
-        payment2.setStatus(PaymentStatus.FLAGGED);
+        payment2.setStatus(PaymentStatus.PENDING);
         payment2.setReferenceNote("Integration payment two");
         payment2.setRiskFlag(true);
         payment2.setCreatedAt(java.time.OffsetDateTime.now());

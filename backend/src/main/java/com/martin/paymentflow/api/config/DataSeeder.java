@@ -112,7 +112,6 @@ public class DataSeeder implements ApplicationRunner {
         int pick = random.nextInt(100);
         if (pick < 55) return PaymentStatus.COMPLETED;
         if (pick < 75) return PaymentStatus.PENDING;
-        if (pick < 85) return PaymentStatus.FLAGGED;
         if (pick < 93) return PaymentStatus.FAILED;
         return PaymentStatus.REVERSED;
     }
@@ -123,9 +122,6 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private boolean shouldFlag(BigDecimal amount, PaymentStatus status) {
-        if (status == PaymentStatus.FLAGGED) {
-            return true;
-        }
         return amount.compareTo(new BigDecimal("5000.00")) > 0 && random.nextBoolean();
     }
 
