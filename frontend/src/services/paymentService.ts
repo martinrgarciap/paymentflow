@@ -1,6 +1,6 @@
 import type { PagedResponse, Payment, PaymentStatus } from "@/types/payment";
 
-const BASE = `${import.meta.env.VITE_API_BASE_URL}/api/payments`;
+const BASE = "/api/payments";
 
 export async function fetchPayments(
   page = 0,
