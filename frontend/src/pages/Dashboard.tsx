@@ -245,7 +245,16 @@ export default function Dashboard() {
             textColor=""
             borderColor={card.borderColor}
             active={statusFilter === card.status}
-            onClick={() => handleStatCardClick(card.status)}
+            onClick={() => {
+              handleStatCardClick(card.status);
+              setFlaggedOnly(false);
+              console.log("card clicked");
+            }}
+            onFlaggedClick={() => {
+              handleStatCardClick(card.status);
+              setFlaggedOnly(true);
+              console.log("flag clicked");
+            }}
             flaggedCount={
               card.status === "All"
                 ? (statusCounts["ALL_FLAGGED"] ?? 0)

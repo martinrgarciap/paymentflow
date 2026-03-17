@@ -10,6 +10,7 @@ interface StatCardProps {
   active?: boolean;
   onClick?: () => void;
   flaggedCount?: number;
+  onFlaggedClick?: () => void;
 }
 
 export default function StatCard({
@@ -22,6 +23,7 @@ export default function StatCard({
   active,
   onClick,
   flaggedCount,
+  onFlaggedClick,
 }: StatCardProps) {
   return (
     <div
@@ -78,6 +80,10 @@ export default function StatCard({
           {flaggedCount !== undefined && flaggedCount > 0 && (
             <span
               className={`text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 text-red-500 bg-red-100 `}
+              onClick={(e) => {
+                e.stopPropagation();
+                onFlaggedClick?.();
+              }}
             >
               ⚑ {flaggedCount}
             </span>
