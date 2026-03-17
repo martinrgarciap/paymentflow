@@ -5,6 +5,14 @@
       "dest": "https://paymentflow-production.up.railway.app/api/$1"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|ico|png|jpg|svg|woff|woff2|ttf|json))",
+      "dest": "/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
