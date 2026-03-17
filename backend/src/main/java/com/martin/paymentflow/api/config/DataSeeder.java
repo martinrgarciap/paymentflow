@@ -57,15 +57,12 @@ public class DataSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        boolean shouldSeed = args.containsOption("seed");
-
-        if (!shouldSeed) {
-            System.out.println("Seed flag not provided. Skipping data seed.");
+        if (paymentRepository.count() > 0) {
+            System.out.println("Data already exists, skipping seed.");
             return;
         }
 
-        System.out.println("Dev seed requested. Clearing existing payments...");
-        paymentRepository.deleteAll();
+        System.out.println("Empty database detected. Seeding 1000 payments...");
 
         List<Payment> payments = new ArrayList<>();
 
