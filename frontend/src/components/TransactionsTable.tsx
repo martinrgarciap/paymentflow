@@ -198,7 +198,7 @@ export default function TransactionsTable({
 
       <div
         className={`overflow-auto transition-opacity duration-150 ${reloading ? "opacity-50 pointer-events-none" : ""}`}
-        style={{ height: "calc(100vh - 360px)", minHeight: "300px" }}
+        style={{ height: "calc(100vh - 450px)", minHeight: "200px" }}
       >
         <table className="w-full text-xs">
           <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
@@ -267,10 +267,10 @@ export default function TransactionsTable({
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {formatDate(p.createdAt)}
                   </td>
-                  <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {formatDate(p.updatedAt)}
                   </td>
                   <td className="px-3 py-2">

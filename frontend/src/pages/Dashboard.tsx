@@ -158,21 +158,10 @@ export default function Dashboard() {
       setTotalElements(totalElements);
 
       if (searchTerm.trim()) {
-        const allRes = await searchPayments(
-          searchTerm.trim(),
-          0,
-          1,
-          undefined,
-          flagged ? true : undefined,
-        );
+        const allRes = await searchPayments(searchTerm.trim(), 0, 1);
         setTotalForSearch(allRes.totalElements);
       } else {
-        const allRes = await fetchPayments(
-          0,
-          1,
-          undefined,
-          flagged ? true : undefined,
-        );
+        const allRes = await fetchPayments(0, 1);
         setTotalForSearch(allRes.totalElements);
       }
     } catch {
@@ -248,12 +237,10 @@ export default function Dashboard() {
             onClick={() => {
               handleStatCardClick(card.status);
               setFlaggedOnly(false);
-              console.log("card clicked");
             }}
             onFlaggedClick={() => {
               handleStatCardClick(card.status);
               setFlaggedOnly(true);
-              console.log("flag clicked");
             }}
             flaggedCount={
               card.status === "All"

@@ -40,13 +40,6 @@ export default function Navbar() {
           </NavLink>
         </div>
       </div>
-
-      <div className="flex items-center gap-2 text-sm text-gray-300 py-4">
-        <div className="w-7 h-7 rounded-full bg-blue-500/40 flex items-center justify-center text-xs font-bold">
-          A
-        </div>
-        Admin User <span className="text-gray-500">▾</span>
-      </div>
     </nav>
   );
 }

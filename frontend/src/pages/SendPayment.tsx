@@ -349,15 +349,27 @@ export default function SendPayment() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
             {modal.type === "success" ? (
               <>
-                <div className="bg-linear-to-br from-green-500 to-emerald-600 px-8 py-8 text-center">
+                <div
+                  className={`px-8 py-8 text-center ${
+                    modal.payment.status === "PENDING"
+                      ? "bg-linear-to-br from-orange-400 to-orange-500"
+                      : "bg-linear-to-br from-green-500 to-emerald-600"
+                  }`}
+                >
                   <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-white text-3xl">✓</span>
+                    <span className="text-white text-3xl">
+                      {modal.payment.status === "PENDING" ? "⏳" : "✓"}
+                    </span>
                   </div>
                   <h2 className="text-white font-black text-xl">
-                    Payment Sent!
+                    {modal.payment.status === "PENDING"
+                      ? "Pending Approval"
+                      : "Payment Sent!"}
                   </h2>
-                  <p className="text-green-100 text-sm mt-1">
-                    Transaction created successfully
+                  <p className="text-white/80 text-sm mt-1">
+                    {modal.payment.status === "PENDING"
+                      ? "Awaiting admin review before processing"
+                      : "Transaction created successfully"}
                   </p>
                 </div>
                 <div className="px-6 py-5 space-y-2 text-sm">
@@ -390,7 +402,14 @@ export default function SendPayment() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Status</span>
-                    <span className="bg-orange-400 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
+                    <span
+                      className={`text-white text-xs px-2 py-0.5 rounded-full font-semibold
+                        ${modal.payment.status === "COMPLETED" ? "bg-green-500" : ""}
+                        ${modal.payment.status === "PENDING" ? "bg-orange-400" : ""}
+                        ${modal.payment.status === "FAILED" ? "bg-red-400" : ""}
+                        ${modal.payment.status === "REVERSED" ? "bg-blue-400" : ""}
+                      `}
+                    >
                       {modal.payment.status}
                     </span>
                   </div>
