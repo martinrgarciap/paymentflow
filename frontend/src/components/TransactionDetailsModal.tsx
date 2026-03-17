@@ -21,31 +21,13 @@ function formatDate(iso: string) {
 
 interface ActionConfig {
   label: string;
-  newStatus: "COMPLETED" | "FAILED" | "PENDING" | "REVERSED" | "FLAGGED";
+  newStatus: "COMPLETED" | "FAILED" | "PENDING" | "REVERSED";
   className: string;
 }
 
 function getActions(status: Payment["status"]): ActionConfig[] {
   switch (status) {
     case "PENDING":
-      return [
-        {
-          label: "Approve",
-          newStatus: "COMPLETED",
-          className: "bg-green-600 hover:bg-green-700 text-white",
-        },
-        {
-          label: "Flag",
-          newStatus: "FLAGGED",
-          className: "bg-orange-500 hover:bg-orange-600 text-white",
-        },
-        {
-          label: "Deny",
-          newStatus: "FAILED",
-          className: "bg-red-500 hover:bg-red-600 text-white",
-        },
-      ];
-    case "FLAGGED":
       return [
         {
           label: "Approve",
@@ -82,7 +64,6 @@ function getActions(status: Payment["status"]): ActionConfig[] {
 const STATUS_DESCRIPTIONS: Record<Payment["status"], string> = {
   PENDING: "Awaiting review and approval.",
   COMPLETED: "This payment has been successfully processed.",
-  FLAGGED: "This payment has been flagged for review due to a risk alert.",
   FAILED: "This payment failed to process.",
   REVERSED: "This payment has been reversed. No further actions available.",
 };

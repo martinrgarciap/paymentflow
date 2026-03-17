@@ -1,6 +1,7 @@
 interface StatCardProps {
   label: string;
   value: number;
+  iconBg?: string;
   icon: string;
   colorFrom: string;
   colorTo: string;
@@ -8,6 +9,7 @@ interface StatCardProps {
   borderColor: string;
   active?: boolean;
   onClick?: () => void;
+  flaggedCount?: number;
 }
 
 export default function StatCard({
@@ -16,23 +18,21 @@ export default function StatCard({
   icon,
   colorFrom,
   colorTo,
-  textColor,
   borderColor,
   active,
   onClick,
+  flaggedCount,
 }: StatCardProps) {
   return (
     <div
       onClick={onClick}
-      className={`
-        relative flex-1 rounded-xl cursor-pointer overflow-hidden
+      className={`relative flex-1 rounded-xl cursor-pointer overflow-hidden
         transition-all duration-200 ease-out select-none
         ${
           active
             ? `shadow-lg scale-[1.03] ring-2 ${borderColor}`
             : "shadow-sm hover:shadow-md hover:scale-[1.01] ring-1 ring-gray-200"
-        }
-      `}
+        }`}
     >
       <div
         className={`absolute inset-0 transition-opacity duration-200 ${active ? "opacity-100" : "opacity-0"}`}
@@ -43,7 +43,6 @@ export default function StatCard({
       <div
         className={`absolute inset-0 bg-white transition-opacity duration-200 ${active ? "opacity-0" : "opacity-100"}`}
       />
-
       <div
         className="absolute bottom-0 left-0 right-0 h-1 rounded-b-xl transition-opacity duration-200"
         style={{
@@ -64,20 +63,26 @@ export default function StatCard({
             {icon}
           </div>
           <div
-            className={`text-3xl font-black tracking-tight transition-colors duration-200 ${
-              active ? "text-white" : "text-gray-800"
-            }`}
+            className={`text-3xl font-black tracking-tight transition-colors duration-200 ${active ? "text-white" : "text-gray-800"}`}
           >
             {value}
           </div>
         </div>
-        <p
-          className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${
-            active ? "text-white/80" : `${borderColor} ${textColor}`
-          }`}
-        >
-          {label}
-        </p>
+
+        <div className="flex items-center justify-between">
+          <p
+            className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${active ? "text-white/80" : "text-gray-400"}`}
+          >
+            {label}
+          </p>
+          {flaggedCount !== undefined && flaggedCount > 0 && (
+            <span
+              className={`text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 text-red-500 bg-red-100 `}
+            >
+              ⚑ {flaggedCount}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -7,8 +7,6 @@ export function statusBadgeClass(status: PaymentStatus): string {
       return "bg-orange-400";
     case "COMPLETED":
       return "bg-green-500";
-    case "FLAGGED":
-      return "bg-red-500";
     case "FAILED":
       return "bg-red-400";
     case "REVERSED":
@@ -32,6 +30,7 @@ type SortKey =
   | "amount"
   | "status"
   | "createdAt"
+  | "riskFlag"
   | "updatedAt";
 type SortDir = "asc" | "desc";
 
@@ -141,6 +140,7 @@ const COLUMNS: { label: string; key: SortKey }[] = [
   { label: "Recipient", key: "recipientName" },
   { label: "Amount", key: "amount" },
   { label: "Status", key: "status" },
+  { label: "Risk", key: "riskFlag" },
   { label: "Created", key: "createdAt" },
   { label: "Updated", key: "updatedAt" },
 ];
@@ -260,6 +260,13 @@ export default function TransactionsTable({
                       {p.status}
                     </span>
                   </td>
+                  <td className="px-3 py-2">
+                    {p.riskFlag && (
+                      <span className="inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                        ⚑ Flagged
+                      </span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-gray-400 whitespace-nowrap">
                     {formatDate(p.createdAt)}
                   </td>
@@ -271,14 +278,12 @@ export default function TransactionsTable({
                       onClick={() => onAction(p)}
                       className={`text-xs px-3 py-1 rounded-full font-medium transition-colors whitespace-nowrap
                       ${p.status === "PENDING" ? "bg-blue-500 hover:bg-blue-600 text-white" : ""}
-                      ${p.status === "FLAGGED" ? "bg-orange-400 hover:bg-orange-500 text-white" : ""}
                       ${p.status === "COMPLETED" ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : ""}
                       ${p.status === "FAILED" ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : ""}
                       ${p.status === "REVERSED" ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : ""}
                     `}
                     >
                       {p.status === "PENDING" ? "Review" : ""}
-                      {p.status === "FLAGGED" ? "Review" : ""}
                       {p.status === "COMPLETED" ? "Details" : ""}
                       {p.status === "FAILED" ? "Details" : ""}
                       {p.status === "REVERSED" ? "Details" : ""}

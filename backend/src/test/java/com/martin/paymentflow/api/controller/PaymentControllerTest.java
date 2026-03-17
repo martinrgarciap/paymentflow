@@ -121,7 +121,7 @@ class PaymentControllerTest {
 
         Page<PaymentResponse> page = new PageImpl<>(responses, PageRequest.of(0, 50), responses.size());
 
-        when(paymentService.getAllPayments(isNull(), any())).thenReturn(page);
+        when(paymentService.getAllPayments(isNull(), isNull(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/payments"))
                 .andExpect(status().isOk())
@@ -209,7 +209,7 @@ class PaymentControllerTest {
 
         Page<PaymentResponse> page = new PageImpl<>(responses, PageRequest.of(0, 50), responses.size());
 
-        when(paymentService.searchPayments(eq("john"), isNull(), any())).thenReturn(page);
+        when(paymentService.searchPayments(eq("john"),isNull(), isNull(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/payments/search").param("query", "john"))
                 .andExpect(status().isOk())
@@ -232,10 +232,11 @@ class PaymentControllerTest {
         Page<PaymentResponse> page = new PageImpl<>(responses, PageRequest.of(0, 50), responses.size());
 
         when(paymentService.filterPayments(
-                eq(null),
-                eq(null),
-                eq(null),
+                isNull(),
+                isNull(),
+                isNull(),
                 eq(PaymentStatus.PENDING),
+                isNull(),
                 any()
         )).thenReturn(page);
 

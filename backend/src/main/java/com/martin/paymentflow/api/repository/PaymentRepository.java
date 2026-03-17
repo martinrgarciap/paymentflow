@@ -12,7 +12,6 @@ import com.martin.paymentflow.api.enums.PaymentStatus;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long>, JpaSpecificationExecutor<Payment> {
     Optional<Payment> findByTransactionId(String transactionId);
-    Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
 
     Page<Payment> findByTransactionIdContainingIgnoreCaseOrSenderNameContainingIgnoreCaseOrRecipientNameContainingIgnoreCase(
             String transactionId,

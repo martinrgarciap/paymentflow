@@ -9,14 +9,7 @@ import {
 import type { Payment, PaymentStatus } from "@/types/payment";
 import { useEffect, useRef, useState } from "react";
 
-const STATUS_OPTIONS = [
-  "All",
-  "PENDING",
-  "COMPLETED",
-  "FLAGGED",
-  "FAILED",
-  "REVERSED",
-];
+const STATUS_OPTIONS = ["All", "PENDING", "COMPLETED", "FAILED", "REVERSED"];
 const PAGE_SIZE = 50;
 
 const STAT_CARDS = [
@@ -45,14 +38,6 @@ const STAT_CARDS = [
     borderColor: "ring-green-500",
   },
   {
-    label: "Flagged",
-    status: "FLAGGED",
-    icon: "⚑",
-    colorFrom: "#ef4444",
-    colorTo: "#b91c1c",
-    borderColor: "ring-red-500",
-  },
-  {
     label: "Failed",
     status: "FAILED",
     icon: "✕",
@@ -70,14 +55,44 @@ const STAT_CARDS = [
   },
 ];
 
-async function fetchPage(page: number, status: string, search: string) {
+async function fetchPage(
+  page: number,
+  status: string,
+  search: string,
+  flagged: boolean,
+) {
+  const riskFlag = flagged ? true : undefined;
+
   if (search.trim()) {
+    if (status === "FLAGGED") {
+      const res = await searchPayments(
+        search.trim(),
+        page,
+        PAGE_SIZE,
+        undefined,
+        true,
+      );
+      return {
+        content: res.content,
+        totalPages: res.totalPages,
+        totalElements: res.totalElements,
+      };
+    }
     const res = await searchPayments(
       search.trim(),
       page,
       PAGE_SIZE,
       status !== "All" ? (status as PaymentStatus) : undefined,
+      riskFlag,
     );
+    return {
+      content: res.content,
+      totalPages: res.totalPages,
+      totalElements: res.totalElements,
+    };
+  }
+  if (status === "FLAGGED") {
+    const res = await fetchPayments(page, PAGE_SIZE, undefined, true);
     return {
       content: res.content,
       totalPages: res.totalPages,
@@ -88,6 +103,7 @@ async function fetchPage(page: number, status: string, search: string) {
     page,
     PAGE_SIZE,
     status !== "All" ? (status as PaymentStatus) : undefined,
+    riskFlag,
   );
   return {
     content: res.content,
@@ -109,6 +125,7 @@ export default function Dashboard() {
   const [totalElements, setTotalElements] = useState(0);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [totalForSearch, setTotalForSearch] = useState(0);
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
 
   const isFirstLoad = useRef(true);
   const isFirstRender = useRef(true);
@@ -120,7 +137,12 @@ export default function Dashboard() {
     } catch {}
   }
 
-  async function loadPage(pageNum: number, status: string, searchTerm: string) {
+  async function loadPage(
+    pageNum: number,
+    status: string,
+    searchTerm: string,
+    flagged: boolean,
+  ) {
     if (isFirstLoad.current) setInitialLoading(true);
     else setReloading(true);
     try {
@@ -128,6 +150,7 @@ export default function Dashboard() {
         pageNum,
         status,
         searchTerm,
+        flagged,
       );
       setPayments(content);
       setPage(pageNum);
@@ -135,10 +158,21 @@ export default function Dashboard() {
       setTotalElements(totalElements);
 
       if (searchTerm.trim()) {
-        const allRes = await searchPayments(searchTerm.trim(), 0, 1);
+        const allRes = await searchPayments(
+          searchTerm.trim(),
+          0,
+          1,
+          undefined,
+          flagged ? true : undefined,
+        );
         setTotalForSearch(allRes.totalElements);
       } else {
-        const allRes = await fetchPayments(0, 1);
+        const allRes = await fetchPayments(
+          0,
+          1,
+          undefined,
+          flagged ? true : undefined,
+        );
         setTotalForSearch(allRes.totalElements);
       }
     } catch {
@@ -155,17 +189,15 @@ export default function Dashboard() {
       isFirstRender.current = false;
       return;
     }
-
     const t = setTimeout(() => {
-      loadPage(0, statusFilter, search);
+      loadPage(0, statusFilter, search, flaggedOnly);
       loadStatusCounts(search);
     }, 150);
-
     return () => clearTimeout(t);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, flaggedOnly]);
 
   useEffect(() => {
-    Promise.all([loadPage(0, "All", ""), loadStatusCounts("")]);
+    Promise.all([loadPage(0, "All", "", false), loadStatusCounts("")]);
   }, []);
 
   function handleStatCardClick(status: string) {
@@ -180,11 +212,6 @@ export default function Dashboard() {
     );
     setModalPayment(null);
     loadStatusCounts(search);
-  }
-
-  function countFor(status: string) {
-    if (status === "All") return totalForSearch;
-    return statusCounts[status] ?? 0;
   }
 
   if (initialLoading)
@@ -202,12 +229,16 @@ export default function Dashboard() {
 
   return (
     <div className="bg-[#f0f4f8] p-6 space-y-4">
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-5 gap-3 w-full">
         {STAT_CARDS.map((card) => (
           <StatCard
             key={card.status}
             label={card.label}
-            value={countFor(card.status)}
+            value={
+              card.status === "All"
+                ? totalForSearch
+                : (statusCounts[card.status] ?? 0)
+            }
             icon={card.icon}
             colorFrom={card.colorFrom}
             colorTo={card.colorTo}
@@ -215,6 +246,11 @@ export default function Dashboard() {
             borderColor={card.borderColor}
             active={statusFilter === card.status}
             onClick={() => handleStatCardClick(card.status)}
+            flaggedCount={
+              card.status === "All"
+                ? (statusCounts["ALL_FLAGGED"] ?? 0)
+                : (statusCounts[`${card.status}_FLAGGED`] ?? 0)
+            }
           />
         ))}
       </div>
@@ -235,6 +271,23 @@ export default function Dashboard() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <label
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer
+      select-none transition-colors
+      ${
+        flaggedOnly
+          ? "bg-red-50 border-red-300 text-red-600 font-medium"
+          : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
+      }`}
+        >
+          <input
+            type="checkbox"
+            checked={flaggedOnly}
+            onChange={(e) => setFlaggedOnly(e.target.checked)}
+            className="accent-red-500 w-3.5 h-3.5"
+          />
+          ⚑ Flagged Only
+        </label>
       </div>
 
       <TransactionsTable
@@ -243,7 +296,7 @@ export default function Dashboard() {
         totalPages={totalPages}
         totalElements={totalElements}
         reloading={reloading}
-        onPageChange={(p) => loadPage(p, statusFilter, search)}
+        onPageChange={(p) => loadPage(p, statusFilter, search, flaggedOnly)}
         onAction={setModalPayment}
       />
 

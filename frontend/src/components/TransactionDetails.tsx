@@ -1,7 +1,7 @@
-import { useState } from "react";
-import type { Payment } from "@/types/payment";
-import { statusBadgeClass } from "./TransactionsTable";
 import { updatePaymentStatus } from "@/services/paymentService";
+import type { Payment, PaymentStatus } from "@/types/payment";
+import { useState } from "react";
+import { statusBadgeClass } from "./TransactionsTable";
 
 interface Props {
   payment: Payment;
@@ -24,7 +24,7 @@ export default function TransactionDetails({
 }: Props) {
   const [loading, setLoading] = useState(false);
 
-  async function handleStatusUpdate(status: "COMPLETED" | "FLAGGED") {
+  async function handleStatusUpdate(status: PaymentStatus) {
     setLoading(true);
     try {
       const updated = await updatePaymentStatus(payment.transactionId, status);
@@ -36,9 +36,7 @@ export default function TransactionDetails({
     }
   }
 
-  const canApprove =
-    payment.status === "PENDING" || payment.status === "FLAGGED";
-  const canFlag = payment.status !== "FLAGGED";
+  const canApprove = payment.status === "PENDING";
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-5 w-72 shrink-0">
@@ -103,7 +101,7 @@ export default function TransactionDetails({
         </div>
       </div>
 
-      {payment.status === "FLAGGED" && (
+      {payment.riskFlag && (
         <div className="mt-3 text-xs text-red-500 font-medium bg-red-50 px-3 py-2 rounded">
           ⚠ Risk Alert: High Amount — Requires Review
         </div>
@@ -118,11 +116,10 @@ export default function TransactionDetails({
           Approve
         </button>
         <button
-          disabled={loading || !canFlag}
-          onClick={() => handleStatusUpdate("FLAGGED")}
+          onClick={() => handleStatusUpdate("FAILED")}
           className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm py-2 rounded font-medium transition-colors"
         >
-          Flag
+          Deny
         </button>
       </div>
     </div>

@@ -26,6 +26,12 @@ public class PaymentSpecifications {
         return (root, query, cb) -> status == null ? null
             : cb.equal(root.get("status"), status);
     }
+
+        public static Specification<Payment> hasRiskFlag(Boolean riskFlag) {
+        return (root, query, cb) -> riskFlag == null ? null
+            : cb.equal(root.get("riskFlag"), riskFlag);
+    }
+
     public static Specification<Payment> matchesSearchQuery(String queryText) {
         return (root, query, cb) -> {
             if (queryText == null || queryText.trim().isEmpty()) {

@@ -6,9 +6,11 @@ export async function fetchPayments(
   page = 0,
   size = 50,
   status?: PaymentStatus,
+  riskFlag?: boolean,
 ): Promise<PagedResponse<Payment>> {
   const query = new URLSearchParams({ page: String(page), size: String(size) });
   if (status) query.append("status", status);
+  if (riskFlag !== undefined) query.append("riskFlag", String(riskFlag));
   const res = await fetch(`${BASE}?${query}`);
   if (!res.ok) throw new Error("Failed to fetch payments");
   return res.json();
@@ -27,6 +29,7 @@ export async function searchPayments(
   page = 0,
   size = 50,
   status?: PaymentStatus,
+  riskFlag?: boolean,
 ): Promise<PagedResponse<Payment>> {
   const params = new URLSearchParams({
     query: query,
@@ -34,6 +37,7 @@ export async function searchPayments(
     size: String(size),
   });
   if (status) params.append("status", status);
+  if (riskFlag) params.append("riskFlag", String(riskFlag));
   const res = await fetch(`${BASE}/search?${params}`);
   if (!res.ok) throw new Error("Failed to search payments");
   return res.json();
@@ -95,27 +99,50 @@ export async function fetchStatusCounts(
   const statuses = [
     "PENDING",
     "COMPLETED",
-    "FLAGGED",
     "FAILED",
     "REVERSED",
   ] as PaymentStatus[];
-  const results = await Promise.all(
-    statuses.map((s) => {
-      if (search?.trim()) {
-        return searchPayments(search.trim(), 0, 1, s).then((r) => ({
-          status: s,
+
+  const allResults = await Promise.all([
+    // Total count per status
+    ...statuses.map((s) =>
+      search?.trim()
+        ? searchPayments(search.trim(), 0, 1, s).then((r) => ({
+            key: s,
+            count: r.totalElements,
+          }))
+        : fetchPayments(0, 1, s).then((r) => ({
+            key: s,
+            count: r.totalElements,
+          })),
+    ),
+    // Flagged count per status
+    ...statuses.map((s) =>
+      search?.trim()
+        ? searchPayments(search.trim(), 0, 1, s, true).then((r) => ({
+            key: `${s}_FLAGGED`,
+            count: r.totalElements,
+          }))
+        : fetchPayments(0, 1, s, true).then((r) => ({
+            key: `${s}_FLAGGED`,
+            count: r.totalElements,
+          })),
+    ),
+    // Total flagged across all statuses
+    search?.trim()
+      ? searchPayments(search.trim(), 0, 1, undefined, true).then((r) => ({
+          key: "ALL_FLAGGED",
           count: r.totalElements,
-        }));
-      }
-      return fetchPayments(0, 1, s).then((r) => ({
-        status: s,
-        count: r.totalElements,
-      }));
-    }),
-  );
+        }))
+      : fetchPayments(0, 1, undefined, true).then((r) => ({
+          key: "ALL_FLAGGED",
+          count: r.totalElements,
+        })),
+  ]);
+
   const counts: Record<string, number> = {};
-  results.forEach((r) => {
-    counts[r.status] = r.count;
+  allResults.forEach((r) => {
+    counts[r.key] = r.count;
   });
   return counts;
 }

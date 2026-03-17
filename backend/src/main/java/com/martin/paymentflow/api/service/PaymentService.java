@@ -1,6 +1,7 @@
 package com.martin.paymentflow.api.service;
 
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasRecipientName;
+import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasRiskFlag;
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasSenderName;
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasStatus;
 import static com.martin.paymentflow.api.repository.PaymentSpecifications.hasTransactionId;
@@ -69,12 +70,14 @@ public class PaymentService {
         return "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    public Page<PaymentResponse> getAllPayments(PaymentStatus status, Pageable pageable) {
-    Page<Payment> payments = (status == null)
-            ? paymentRepository.findAll(pageable)
-            : paymentRepository.findByStatus(status, pageable);
+    public Page<PaymentResponse> getAllPayments(PaymentStatus status, Boolean riskFlag, Pageable pageable) {
+        Specification<Payment> spec = Specification
+            .where(hasStatus(status))
+            .and(hasRiskFlag(riskFlag));
 
-    return payments.map(this::mapToResponse);
+        Page<Payment> payments = paymentRepository.findAll(spec, pageable);
+
+        return payments.map(this::mapToResponse);
     }
 
     public PaymentResponse getPaymentByTransactionId(String transactionId) {
@@ -94,23 +97,31 @@ public class PaymentService {
         return mapToResponse(updatedPayment);
     }
 
-    public Page<PaymentResponse> searchPayments(String query, PaymentStatus status, Pageable pageable) {
+    public Page<PaymentResponse> searchPayments(String query, PaymentStatus status, Boolean riskFlag, Pageable pageable) {
         Specification<Payment> spec = Specification
             .where(matchesSearchQuery(query))
-            .and(hasStatus(status));
+            .and(hasStatus(status))
+            .and(hasRiskFlag(riskFlag));
 
         Page<Payment> payments = paymentRepository.findAll(spec, pageable);
 
         return payments.map(this::mapToResponse);
     }
 
-    public Page<PaymentResponse> filterPayments(String transactionId, String senderName,
-                                    String recipientName, PaymentStatus status, Pageable pageable) {
+    public Page<PaymentResponse> filterPayments(
+            String transactionId,
+            String senderName,
+            String recipientName,
+            PaymentStatus status,
+            Boolean riskFlag,
+            Pageable pageable
+    ) {
         Specification<Payment> spec = Specification
             .where(hasTransactionId(transactionId))
             .and(hasSenderName(senderName))
             .and(hasRecipientName(recipientName))
-            .and(hasStatus(status));
+            .and(hasStatus(status))
+            .and(hasRiskFlag(riskFlag));
 
         Page<Payment> payments = paymentRepository.findAll(spec, pageable);
 

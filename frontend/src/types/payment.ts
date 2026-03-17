@@ -1,9 +1,4 @@
-export type PaymentStatus =
-  | "PENDING"
-  | "COMPLETED"
-  | "FLAGGED"
-  | "FAILED"
-  | "REVERSED";
+export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED" | "REVERSED";
 
 export type Currency = "CAD" | "USD" | "EUR" | "GBP";
 
