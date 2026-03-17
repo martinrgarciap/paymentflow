@@ -1,1 +1,1 @@
-web: java -jar target
+web: java -jar target/paymentflow-api-0.0.1-SNAPSHOT.jar
