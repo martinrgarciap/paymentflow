@@ -53,7 +53,7 @@ export default function StatCard({
         }}
       />
 
-      <div className="relative px-5 py-4">
+      <div className="relative px-5 py-4 hidden md:block">
         <div className="flex items-start justify-between mb-3">
           <div
             className="w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-all duration-200"
@@ -70,7 +70,6 @@ export default function StatCard({
             {value}
           </div>
         </div>
-
         <div className="flex items-center justify-between">
           <p
             className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${active ? "text-white/80" : "text-gray-400"}`}
@@ -79,7 +78,48 @@ export default function StatCard({
           </p>
           {flaggedCount !== undefined && flaggedCount > 0 && (
             <span
-              className={`text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 text-red-500 bg-red-100 `}
+              className={
+                "text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-red-100 text-red-500 "
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                onFlaggedClick?.();
+              }}
+            >
+              ⚑ {flaggedCount}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="relative px-3 py-3 md:hidden">
+        <div className="flex items-center justify-between mb-1.5">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all duration-200"
+            style={{
+              background: active ? "rgba(255,255,255,0.25)" : `${colorFrom}22`,
+              color: active ? "white" : colorFrom,
+            }}
+          >
+            {icon}
+          </div>
+          <div
+            className={`text-2xl font-black tracking-tight transition-colors duration-200 ${active ? "text-white" : "text-gray-800"}`}
+          >
+            {value}
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <p
+            className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-200 ${active ? "text-white/80" : "text-gray-400"}`}
+          >
+            {label}
+          </p>
+          {flaggedCount !== undefined && flaggedCount > 0 && (
+            <span
+              className={
+                "text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-red-100 text-red-500"
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 onFlaggedClick?.();

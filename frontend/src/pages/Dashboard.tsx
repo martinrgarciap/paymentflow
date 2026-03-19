@@ -218,7 +218,53 @@ export default function Dashboard() {
 
   return (
     <div className="bg-[#f0f4f8] p-6 space-y-4">
-      <div className="grid grid-cols-5 gap-3 w-full">
+      <div className="space-y-2 md:hidden">
+        <StatCard
+          label="All Transactions"
+          value={totalForSearch}
+          icon="⊞"
+          colorFrom="#3b82f6"
+          colorTo="#1d4ed8"
+          textColor=""
+          borderColor="ring-blue-500"
+          active={statusFilter === "All"}
+          onClick={() => {
+            handleStatCardClick("All");
+            setFlaggedOnly(false);
+          }}
+          onFlaggedClick={() => {
+            handleStatCardClick("All");
+            setFlaggedOnly(true);
+          }}
+          flaggedCount={statusCounts["ALL_FLAGGED"] ?? 0}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          {STAT_CARDS.filter((c) => c.status !== "All").map((card) => (
+            <StatCard
+              key={card.status}
+              label={card.label}
+              value={statusCounts[card.status] ?? 0}
+              icon={card.icon}
+              colorFrom={card.colorFrom}
+              colorTo={card.colorTo}
+              textColor=""
+              borderColor={card.borderColor}
+              active={statusFilter === card.status}
+              onClick={() => {
+                handleStatCardClick(card.status);
+                setFlaggedOnly(false);
+              }}
+              onFlaggedClick={() => {
+                handleStatCardClick(card.status);
+                setFlaggedOnly(true);
+              }}
+              flaggedCount={statusCounts[`${card.status}_FLAGGED`] ?? 0}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="hidden md:grid grid-cols-5 gap-3 w-full">
         {STAT_CARDS.map((card) => (
           <StatCard
             key={card.status}
@@ -251,39 +297,54 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="flex gap-3 items-center">
-        <select
-          className="border rounded px-3 py-2 text-sm bg-white shadow-sm"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-        <input
-          className="border rounded px-3 py-2 text-sm bg-white shadow-sm flex-1 max-w-sm"
-          placeholder="Search by ID, sender, or recipient"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <label
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer
-      select-none transition-colors
-      ${
-        flaggedOnly
-          ? "bg-red-50 border-red-300 text-red-600 font-medium"
-          : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
-      }`}
-        >
+      <div className="space-y-2">
+        <div className="flex gap-3 items-center">
+          <select
+            className="border rounded px-3 py-2 text-sm bg-white shadow-sm"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
           <input
-            type="checkbox"
-            checked={flaggedOnly}
-            onChange={(e) => setFlaggedOnly(e.target.checked)}
-            className="accent-red-500 w-3.5 h-3.5"
+            className="border rounded px-3 py-2 text-sm bg-white shadow-sm flex-1"
+            placeholder="Search by ID, sender, or recipient"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
-          ⚑ Flagged Only
-        </label>
+          {reloading && (
+            <span className="text-xs text-blue-400 animate-pulse whitespace-nowrap hidden md:block">
+              Updating...
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <label
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm cursor-pointer
+        select-none transition-colors
+        ${
+          flaggedOnly
+            ? "bg-red-50 border-red-300 text-red-600 font-medium"
+            : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"
+        }`}
+          >
+            <input
+              type="checkbox"
+              checked={flaggedOnly}
+              onChange={(e) => setFlaggedOnly(e.target.checked)}
+              className="accent-red-500 w-3.5 h-3.5"
+            />
+            ⚑ Flagged Only
+          </label>
+          {reloading && (
+            <span className="text-xs text-blue-400 animate-pulse md:hidden">
+              Updating...
+            </span>
+          )}
+        </div>
       </div>
 
       <TransactionsTable

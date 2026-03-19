@@ -37,6 +37,7 @@ type SortDir = "asc" | "desc";
 interface PaginationProps {
   page: number;
   totalPages: number;
+  totalElements: number;
   reloading: boolean;
   onPageChange: (p: number) => void;
 }
@@ -44,82 +45,93 @@ interface PaginationProps {
 function Pagination({
   page,
   totalPages,
+  totalElements,
   reloading,
   onPageChange,
 }: PaginationProps) {
   if (totalPages <= 1) return null;
 
+  const start = page * 50 + 1;
+  const end = Math.min((page + 1) * 50, totalElements);
+
   function getPageNumbers() {
     const range: number[] = [];
-    const start = Math.max(0, page - 2);
-    const end = Math.min(totalPages - 1, page + 2);
-    for (let i = start; i <= end; i++) range.push(i);
+    const s = Math.max(0, page - 2);
+    const e = Math.min(totalPages - 1, page + 2);
+    for (let i = s; i <= e; i++) range.push(i);
     return range;
   }
 
   const pages = getPageNumbers();
 
   return (
-    <div className="flex items-center justify-between px-1 py-2">
-      <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page === 0 || reloading}
-        className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border bg-white
-                   text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed
-                   transition-colors shadow-sm"
-      >
-        ← Previous
-      </button>
-
-      <div className="flex items-center gap-1">
-        {pages[0] > 0 && (
-          <>
-            <button
-              onClick={() => onPageChange(0)}
-              className="w-7 h-7 text-xs rounded-lg border bg-white text-gray-600 hover:bg-gray-50 shadow-sm"
-            >
-              1
-            </button>
-            {pages[0] > 1 && (
-              <span className="text-gray-400 text-xs px-0.5">…</span>
-            )}
-          </>
-        )}
-        {pages.map((p) => (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            disabled={reloading}
-            className={`w-7 h-7 text-xs rounded-lg border transition-colors shadow-sm font-medium
-              ${p === page ? "bg-blue-600 border-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
-          >
-            {p + 1}
-          </button>
-        ))}
-        {pages[pages.length - 1] < totalPages - 1 && (
-          <>
-            {pages[pages.length - 1] < totalPages - 2 && (
-              <span className="text-gray-400 text-xs px-0.5">…</span>
-            )}
-            <button
-              onClick={() => onPageChange(totalPages - 1)}
-              className="w-7 h-7 text-xs rounded-lg border bg-white text-gray-600 hover:bg-gray-50 shadow-sm"
-            >
-              {totalPages}
-            </button>
-          </>
-        )}
+    <div className="space-y-1">
+      <div className="text-xs text-gray-400 px-1">
+        {totalElements > 0
+          ? `${start}–${end} of ${totalElements} transactions`
+          : "No results"}
       </div>
+      <div className="flex items-center justify-between px-1 py-1">
+        <button
+          onClick={() => onPageChange(page - 1)}
+          disabled={page === 0 || reloading}
+          className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg border bg-white
+                     text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed
+                     transition-colors shadow-sm"
+        >
+          ← Prev
+        </button>
 
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page >= totalPages - 1 || reloading}
-        className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border bg-white
-                   text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed
-                   transition-colors shadow-sm"
-      >
-        Next →
-      </button>
+        <div className="flex items-center gap-1">
+          {pages[0] > 0 && (
+            <>
+              <button
+                onClick={() => onPageChange(0)}
+                className="w-7 h-7 text-xs rounded-lg border bg-white text-gray-600 hover:bg-gray-50 shadow-sm"
+              >
+                1
+              </button>
+              {pages[0] > 1 && (
+                <span className="text-gray-400 text-xs px-0.5">…</span>
+              )}
+            </>
+          )}
+          {pages.map((p) => (
+            <button
+              key={p}
+              onClick={() => onPageChange(p)}
+              disabled={reloading}
+              className={`w-7 h-7 text-xs rounded-lg border transition-colors shadow-sm font-medium
+                ${p === page ? "bg-blue-600 border-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+            >
+              {p + 1}
+            </button>
+          ))}
+          {pages[pages.length - 1] < totalPages - 1 && (
+            <>
+              {pages[pages.length - 1] < totalPages - 2 && (
+                <span className="text-gray-400 text-xs px-0.5">…</span>
+              )}
+              <button
+                onClick={() => onPageChange(totalPages - 1)}
+                className="w-7 h-7 text-xs rounded-lg border bg-white text-gray-600 hover:bg-gray-50 shadow-sm"
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
+        </div>
+
+        <button
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages - 1 || reloading}
+          className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg border bg-white
+                     text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed
+                     transition-colors shadow-sm"
+        >
+          Next →
+        </button>
+      </div>
     </div>
   );
 }
@@ -133,17 +145,6 @@ interface Props {
   onPageChange: (p: number) => void;
   onAction: (payment: Payment) => void;
 }
-
-const COLUMNS: { label: string; key: SortKey }[] = [
-  { label: "Transaction ID", key: "transactionId" },
-  { label: "Sender", key: "senderName" },
-  { label: "Recipient", key: "recipientName" },
-  { label: "Amount", key: "amount" },
-  { label: "Status", key: "status" },
-  { label: "Risk", key: "riskFlag" },
-  { label: "Created", key: "createdAt" },
-  { label: "Updated", key: "updatedAt" },
-];
 
 export default function TransactionsTable({
   payments,
@@ -177,20 +178,22 @@ export default function TransactionsTable({
     });
   }, [payments, sortKey, sortDir]);
 
-  const start = page * 50 + 1;
-  const end = Math.min((page + 1) * 50, totalElements);
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <span className="text-gray-300 ml-1">↕</span>;
+    return (
+      <span className="text-blue-500 ml-1">
+        {sortDir === "asc" ? "↑" : "↓"}
+      </span>
+    );
+  }
 
   return (
     <div className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50/80">
-        <span className="text-xs text-gray-400">
-          {totalElements > 0
-            ? `${start}–${end} of ${totalElements} transactions`
-            : "No results"}
-        </span>
+      <div className="px-3 py-2 border-b bg-gray-50/80">
         <Pagination
           page={page}
           totalPages={totalPages}
+          totalElements={totalElements}
           reloading={reloading}
           onPageChange={onPageChange}
         />
@@ -203,23 +206,54 @@ export default function TransactionsTable({
         <table className="w-full text-xs">
           <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
             <tr>
-              {COLUMNS.map((col) => (
-                <th
-                  key={col.key}
-                  onClick={() => handleSort(col.key)}
-                  className="text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap
-                             cursor-pointer hover:bg-gray-100 hover:text-gray-800 transition-colors select-none"
-                >
-                  {col.label}
-                  {sortKey === col.key ? (
-                    <span className="text-blue-500 ml-1">
-                      {sortDir === "asc" ? "↑" : "↓"}
-                    </span>
-                  ) : (
-                    <span className="text-gray-300 ml-1">↕</span>
-                  )}
-                </th>
-              ))}
+              <th
+                onClick={() => handleSort("transactionId")}
+                className="text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Transaction ID <SortIcon col="transactionId" />
+              </th>
+              <th
+                onClick={() => handleSort("senderName")}
+                className="text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Sender <SortIcon col="senderName" />
+              </th>
+              <th
+                onClick={() => handleSort("recipientName")}
+                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Recipient <SortIcon col="recipientName" />
+              </th>
+              <th
+                onClick={() => handleSort("amount")}
+                className="text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Amount <SortIcon col="amount" />
+              </th>
+              <th
+                onClick={() => handleSort("status")}
+                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Status <SortIcon col="status" />
+              </th>
+              <th
+                onClick={() => handleSort("riskFlag")}
+                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Risk <SortIcon col="riskFlag" />
+              </th>
+              <th
+                onClick={() => handleSort("createdAt")}
+                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Created <SortIcon col="createdAt" />
+              </th>
+              <th
+                onClick={() => handleSort("updatedAt")}
+                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+              >
+                Updated <SortIcon col="updatedAt" />
+              </th>
               <th className="text-left px-3 py-2.5 font-semibold text-gray-600">
                 Action
               </th>
@@ -228,7 +262,7 @@ export default function TransactionsTable({
           <tbody className="divide-y divide-gray-100">
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-12 text-gray-400">
+                <td colSpan={9} className="text-center py-12 text-gray-400">
                   No transactions found
                 </td>
               </tr>
@@ -244,33 +278,36 @@ export default function TransactionsTable({
                   <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {p.senderName}
                   </td>
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                  <td className="hidden md:table-cell px-3 py-2 text-gray-700 whitespace-nowrap">
                     {p.recipientName}
                   </td>
                   <td className="px-3 py-2 text-gray-800 font-medium whitespace-nowrap">
-                    <span className="text-gray-400 mr-1">{p.currency}</span>$
+                    <span className="text-gray-400 mr-1 hidden md:inline">
+                      {p.currency}
+                    </span>
+                    $
                     {p.amount.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                     })}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="hidden md:table-cell px-3 py-2">
                     <span
                       className={`px-2 py-0.5 rounded-full text-white text-xs font-semibold whitespace-nowrap ${statusBadgeClass(p.status)}`}
                     >
                       {p.status}
                     </span>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="hidden md:table-cell px-3 py-2">
                     {p.riskFlag && (
                       <span className="inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">
                         ⚑ Flagged
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                  <td className="hidden md:table-cell px-3 py-2 text-gray-700 whitespace-nowrap">
                     {formatDate(p.createdAt)}
                   </td>
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                  <td className="hidden md:table-cell px-3 py-2 text-gray-700 whitespace-nowrap">
                     {formatDate(p.updatedAt)}
                   </td>
                   <td className="px-3 py-2">
@@ -296,10 +333,11 @@ export default function TransactionsTable({
         </table>
       </div>
 
-      <div className="border-t bg-gray-50/80 px-4">
+      <div className="border-t bg-gray-50/80 px-3 py-2">
         <Pagination
           page={page}
           totalPages={totalPages}
+          totalElements={totalElements}
           reloading={reloading}
           onPageChange={onPageChange}
         />
