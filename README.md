@@ -1,4 +1,3 @@
-```markdown
 # PaymentFlow
 
 A full-stack payments dashboard simulating a modern payment operations system. Built with Java Spring Boot and React + TypeScript, deployed live on Railway and Vercel.
@@ -8,34 +7,37 @@ A full-stack payments dashboard simulating a modern payment operations system. B
 ---
 
 ## Project Structure
+
 ```
-
 paymentflow/
-├── backend/ # Spring Boot REST API
-└── frontend/ # React + TypeScript dashboard
-
-````
+├── backend/    # Spring Boot REST API
+└── frontend/   # React + TypeScript dashboard
+```
 
 ---
 
 ## Tech Stack
 
 **Backend**
+
 - Java 21, Spring Boot, Spring Data JPA, Hibernate
 - PostgreSQL (production), H2 (testing)
 - Maven
 - Spring Validation, Spring Boot Actuator
 
 **Frontend**
+
 - React 19, TypeScript, Vite
 - Tailwind CSS, shadcn/ui
 - React Router
 
 **Testing**
+
 - JUnit 5, Mockito, MockMvc
 - H2 in-memory database (integration tests)
 
 **Deployment**
+
 - Backend + PostgreSQL: Railway
 - Frontend: Vercel
 
@@ -44,6 +46,7 @@ paymentflow/
 ## Getting Started
 
 ### Prerequisites
+
 - Java 21+
 - Node.js 22+
 - PostgreSQL running locally
@@ -53,7 +56,7 @@ paymentflow/
 ```bash
 cd backend
 mvn spring-boot:run
-````
+```
 
 Runs on `http://localhost:8080`
 
@@ -126,7 +129,3 @@ mvn test
 - Structured error handling and input validation
 - Health monitoring via Spring Actuator
 - Environment-based configuration for local and production profiles
-
-```
-
-```
