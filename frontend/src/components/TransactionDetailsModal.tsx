@@ -1,7 +1,7 @@
-import { useState } from "react";
-import type { Payment } from "@/types/payment";
-import { statusBadgeClass } from "./TransactionsTable";
 import { updatePaymentStatus } from "@/services/paymentService";
+import type { Payment } from "@/types/payment";
+import { useState } from "react";
+import { statusBadgeClass } from "./TransactionsTable";
 
 interface Props {
   payment: Payment | null;
@@ -107,9 +107,9 @@ export default function TransactionDetailsModal({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div>
-            <h2 className="font-bold text-gray-900 text-base">
+            <span className="font-bold text-gray-900 text-base">
               Transaction Details
-            </h2>
+            </span>
             <p className="text-xs text-gray-400 font-mono mt-0.5">
               {payment.transactionId}
             </p>

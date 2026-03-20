@@ -81,7 +81,6 @@ function Pagination({
         >
           ← Prev
         </button>
-
         <div className="flex items-center gap-1">
           {pages[0] > 0 && (
             <>
@@ -121,7 +120,6 @@ function Pagination({
             </>
           )}
         </div>
-
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages - 1 || reloading}
@@ -187,6 +185,9 @@ export default function TransactionsTable({
     );
   }
 
+  const thClass =
+    "text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none";
+
   return (
     <div className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-3 py-2 border-b bg-gray-50/80">
@@ -200,61 +201,43 @@ export default function TransactionsTable({
       </div>
 
       <div
-        className={`overflow-auto transition-opacity duration-150 ${reloading ? "opacity-50 pointer-events-none" : ""}`}
+        className={`overflow-x-auto overflow-y-auto transition-opacity duration-150 ${reloading ? "opacity-50 pointer-events-none" : ""}`}
         style={{ height: "calc(100vh - 450px)", minHeight: "200px" }}
       >
-        <table className="w-full text-xs">
+        <table className="w-full text-xs" style={{ minWidth: "700px" }}>
           <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
             <tr>
               <th
                 onClick={() => handleSort("transactionId")}
-                className="text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+                className={thClass}
               >
                 Transaction ID <SortIcon col="transactionId" />
               </th>
-              <th
-                onClick={() => handleSort("senderName")}
-                className="text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
-              >
+              <th onClick={() => handleSort("senderName")} className={thClass}>
                 Sender <SortIcon col="senderName" />
               </th>
               <th
                 onClick={() => handleSort("recipientName")}
-                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
+                className={thClass}
               >
                 Recipient <SortIcon col="recipientName" />
               </th>
-              <th
-                onClick={() => handleSort("amount")}
-                className="text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
-              >
+              <th onClick={() => handleSort("amount")} className={thClass}>
                 Amount <SortIcon col="amount" />
               </th>
-              <th
-                onClick={() => handleSort("status")}
-                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
-              >
+              <th onClick={() => handleSort("status")} className={thClass}>
                 Status <SortIcon col="status" />
               </th>
-              <th
-                onClick={() => handleSort("riskFlag")}
-                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
-              >
+              <th onClick={() => handleSort("riskFlag")} className={thClass}>
                 Risk <SortIcon col="riskFlag" />
               </th>
-              <th
-                onClick={() => handleSort("createdAt")}
-                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
-              >
+              <th onClick={() => handleSort("createdAt")} className={thClass}>
                 Created <SortIcon col="createdAt" />
               </th>
-              <th
-                onClick={() => handleSort("updatedAt")}
-                className="hidden md:table-cell text-left px-3 py-2.5 font-semibold text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none"
-              >
+              <th onClick={() => handleSort("updatedAt")} className={thClass}>
                 Updated <SortIcon col="updatedAt" />
               </th>
-              <th className="text-left px-3 py-2.5 font-semibold text-gray-600">
+              <th className="sticky right-0 z-20 bg-gray-50 text-left px-3 py-2.5 font-semibold text-gray-600 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">
                 Action
               </th>
             </tr>
@@ -270,6 +253,9 @@ export default function TransactionsTable({
               sorted.map((p) => (
                 <tr
                   key={p.transactionId}
+                  onClick={() => {
+                    if (window.innerWidth < 768) onAction(p);
+                  }}
                   className="hover:bg-blue-50/40 transition-colors"
                 >
                   <td className="px-3 py-2 font-mono text-blue-600 font-medium whitespace-nowrap">
@@ -278,41 +264,41 @@ export default function TransactionsTable({
                   <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {p.senderName}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-2 text-gray-700 whitespace-nowrap">
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {p.recipientName}
                   </td>
                   <td className="px-3 py-2 text-gray-800 font-medium whitespace-nowrap">
-                    <span className="text-gray-400 mr-1 hidden md:inline">
-                      {p.currency}
-                    </span>
-                    $
+                    <span className="text-gray-400 mr-1">{p.currency}</span>$
                     {p.amount.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                     })}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-2">
+                  <td className="px-3 py-2">
                     <span
                       className={`px-2 py-0.5 rounded-full text-white text-xs font-semibold whitespace-nowrap ${statusBadgeClass(p.status)}`}
                     >
                       {p.status}
                     </span>
                   </td>
-                  <td className="hidden md:table-cell px-3 py-2">
+                  <td className="px-3 py-2">
                     {p.riskFlag && (
-                      <span className="inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
                         ⚑ Flagged
                       </span>
                     )}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-2 text-gray-700 whitespace-nowrap">
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {formatDate(p.createdAt)}
                   </td>
-                  <td className="hidden md:table-cell px-3 py-2 text-gray-700 whitespace-nowrap">
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {formatDate(p.updatedAt)}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="sticky right-0 z-10 bg-slate-100 px-3 py-2 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)">
                     <button
-                      onClick={() => onAction(p)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAction(p);
+                      }}
                       className={`text-xs px-3 py-1 rounded-full font-medium transition-colors whitespace-nowrap
                       ${p.status === "PENDING" ? "bg-blue-500 hover:bg-blue-600 text-white" : ""}
                       ${p.status === "COMPLETED" ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : ""}
