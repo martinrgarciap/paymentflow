@@ -30,7 +30,7 @@ public class SecurityConfig {
     @Value("${ALLOWED_ORIGINS:}")
     private String allowedOrigins;
 
-    @Value("${DEV_ALLOWED_ORIGINS:}")
+    @Value("${dev.allowed.origins:}")
     private String devAllowedOrigins;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {

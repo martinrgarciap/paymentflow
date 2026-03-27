@@ -268,6 +268,9 @@ export default function SendPayment() {
                             <div className="text-sm font-medium text-gray-900">
                               {fullName}
                             </div>
+                            <div className="text-xs text-gray-600">
+                              {user.email}
+                            </div>
                           </button>
                         );
                       })
