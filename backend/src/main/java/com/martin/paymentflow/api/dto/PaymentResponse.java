@@ -1,10 +1,9 @@
 package com.martin.paymentflow.api.dto;
 
-import com.martin.paymentflow.api.enums.CurrencyCode;
-import com.martin.paymentflow.api.enums.PaymentStatus;
-
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+
+import com.martin.paymentflow.api.enums.PaymentStatus;
 
 public class PaymentResponse {
 
@@ -12,12 +11,12 @@ public class PaymentResponse {
     private String senderName;
     private String recipientName;
     private BigDecimal amount;
-    private CurrencyCode currency;
     private PaymentStatus status;
     private String referenceNote;
     private boolean riskFlag;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private String failureReason;
 
     public String getTransactionId() {
         return transactionId;
@@ -49,14 +48,6 @@ public class PaymentResponse {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
-    }
-
-    public CurrencyCode getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(CurrencyCode currency) {
-        this.currency = currency;
     }
 
     public PaymentStatus getStatus() {
@@ -97,5 +88,13 @@ public class PaymentResponse {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
     }
 }

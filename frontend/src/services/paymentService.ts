@@ -1,4 +1,5 @@
 import type { PagedResponse, Payment, PaymentStatus } from "@/types/payment";
+import { apiFetch, readJsonOrThrow } from "./apiClient";
 
 const BASE = `${import.meta.env.VITE_API_BASE_URL}/api/payments`;
 
@@ -37,7 +38,7 @@ export async function searchPayments(
     size: String(size),
   });
   if (status) params.append("status", status);
-  if (riskFlag) params.append("riskFlag", String(riskFlag));
+  if (riskFlag !== undefined) params.append("riskFlag", String(riskFlag));
   const res = await fetch(`${BASE}/search?${params}`);
   if (!res.ok) throw new Error("Failed to search payments");
   return res.json();
@@ -68,7 +69,6 @@ export async function createPayment(data: {
   senderName: string;
   recipientName: string;
   amount: number;
-  currency: string;
   referenceNote?: string;
 }): Promise<Payment> {
   const res = await fetch(BASE, {
@@ -78,6 +78,19 @@ export async function createPayment(data: {
   });
   if (!res.ok) throw new Error("Failed to create payment");
   return res.json();
+}
+
+export async function createAuthenticatedPayment(data: {
+  recipientId: number;
+  amount: number;
+  referenceNote?: string;
+}): Promise<Payment> {
+  const res = await apiFetch("/api/payments", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  return readJsonOrThrow<Payment>(res, "Failed to create payment");
 }
 
 export async function updatePaymentStatus(

@@ -65,8 +65,8 @@ export default function TransactionDetails({
         <div>
           <span className="text-gray-500">Amount: </span>
           <span className="font-semibold text-gray-800">
-            {payment.currency} $
-            {payment.amount.toLocaleString("en-US", {
+            $
+            {payment.amount.toLocaleString("en-CA", {
               minimumFractionDigits: 2,
             })}
           </span>

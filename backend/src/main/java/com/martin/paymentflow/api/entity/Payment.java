@@ -3,46 +3,52 @@ package com.martin.paymentflow.api.entity;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-import com.martin.paymentflow.api.enums.CurrencyCode;
 import com.martin.paymentflow.api.enums.PaymentStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
 
 @Entity
 @Table(name = "payments")
-
 public class Payment {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "transaction_id", nullable= false, unique = true, length=50)
+    @Column(name = "transaction_id", nullable = false, unique = true, length = 50)
     private String transactionId;
 
-    @Column(name="sender_name", nullable=false, length=100)
+    // Legacy fields - keep temporarily so existing endpoints still work
+    @Column(name = "sender_name", nullable = false, length = 100)
     private String senderName;
 
-    @Column(name="recipient_name", nullable=false, length=100)
+    @Column(name = "recipient_name", nullable = false, length = 100)
     private String recipientName;
 
-    @Column(nullable=false, precision=12, scale=2)
+    // New relationship fields
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id")
+    private User sender;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipient_id")
+    private User recipient;
+
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable=false, length=10)
-    private CurrencyCode currency;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable=false, length=20)
+    @Column(nullable = false, length = 20)
     private PaymentStatus status;
 
     @Column(name = "reference_note", length = 255)
@@ -57,9 +63,10 @@ public class Payment {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "failure_reason", length = 255)
+    private String failureReason;
 
     public Payment() {
-
     }
 
     public Long getId() {
@@ -71,7 +78,7 @@ public class Payment {
     }
 
     public void setTransactionId(String transactionId) {
-        this.transactionId  = transactionId;
+        this.transactionId = transactionId;
     }
 
     public String getSenderName() {
@@ -90,20 +97,28 @@ public class Payment {
         this.recipientName = recipientName;
     }
 
+    public User getSender() {
+        return sender;
+    }
+
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
+
+    public User getRecipient() {
+        return recipient;
+    }
+
+    public void setRecipient(User recipient) {
+        this.recipient = recipient;
+    }
+
     public BigDecimal getAmount() {
         return amount;
     }
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
-    }
-
-    public CurrencyCode getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(CurrencyCode currency) {
-        this.currency = currency;
     }
 
     public PaymentStatus getStatus() {
@@ -144,5 +159,13 @@ public class Payment {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
     }
 }

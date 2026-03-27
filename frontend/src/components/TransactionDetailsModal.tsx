@@ -7,6 +7,7 @@ interface Props {
   payment: Payment | null;
   onClose: () => void;
   onStatusUpdated: (updated: Payment) => void;
+  canManage?: boolean;
 }
 
 function formatDate(iso: string) {
@@ -72,6 +73,7 @@ export default function TransactionDetailsModal({
   payment,
   onClose,
   onStatusUpdated,
+  canManage = true,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ActionConfig | null>(null);
@@ -151,8 +153,8 @@ export default function TransactionDetailsModal({
                 Amount
               </p>
               <p className="font-semibold text-gray-800">
-                {payment.currency} $
-                {payment.amount.toLocaleString("en-US", {
+                $
+                {payment.amount.toLocaleString("en-CA", {
                   minimumFractionDigits: 2,
                 })}
               </p>
@@ -202,7 +204,7 @@ export default function TransactionDetailsModal({
           )}
         </div>
 
-        {actions.length > 0 && (
+        {canManage && actions.length > 0 && (
           <div className="px-6 pb-6">
             <div className="border-t pt-4">
               {confirmAction ? (
@@ -252,6 +254,12 @@ export default function TransactionDetailsModal({
             <div className="border-t pt-4 text-center text-xs text-gray-400">
               No further actions available for reversed payments.
             </div>
+          </div>
+        )}
+
+        {!canManage && (
+          <div className="mt-5 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-500">
+            User lens view. Admin-only payment actions are hidden here.
           </div>
         )}
       </div>

@@ -1,23 +1,22 @@
-import { createPayment } from "@/services/paymentService";
+import { useDemoSession } from "@/context/DemoSessionContext";
+import { createAuthenticatedPayment } from "@/services/paymentService";
+import { searchUsers } from "@/services/userService";
 import type { Payment } from "@/types/payment";
-import { useState } from "react";
+import type { UserSearchResult } from "@/types/user";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const CURRENCIES = ["CAD", "USD", "EUR", "GBP"];
-
 interface FormState {
-  senderName: string;
+  recipientId: number | null;
   recipientName: string;
   amount: string;
-  currency: string;
   referenceNote: string;
 }
 
 const EMPTY: FormState = {
-  senderName: "",
+  recipientId: null,
   recipientName: "",
   amount: "",
-  currency: "CAD",
   referenceNote: "",
 };
 
@@ -29,24 +28,92 @@ type ModalState =
 
 export default function SendPayment() {
   const navigate = useNavigate();
+  const { isAdminView, isUserView, selectedUser } = useDemoSession();
+
   const [form, setForm] = useState<FormState>(EMPTY);
-  const [errors, setErrors] = useState<Partial<FormState>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({});
   const [stage, setStage] = useState<Stage>("form");
   const [submitting, setSubmitting] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
 
-  function set(field: keyof FormState, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const [recipientResults, setRecipientResults] = useState<UserSearchResult[]>(
+    [],
+  );
+  const [recipientQuery, setRecipientQuery] = useState("");
+  const [showRecipientDropdown, setShowRecipientDropdown] = useState(false);
+  const [recipientLoading, setRecipientLoading] = useState(false);
+
+  useEffect(() => {
+    const trimmed = recipientQuery.trim();
+
+    if (!showRecipientDropdown) return;
+
+    const timeout = setTimeout(async () => {
+      try {
+        setRecipientLoading(true);
+
+        const results = await searchUsers(trimmed);
+
+        const filtered = results.filter((user) => {
+          if (isUserView && selectedUser && user.id === selectedUser.id) {
+            return false;
+          }
+          return true;
+        });
+
+        setRecipientResults(filtered);
+      } catch {
+        setRecipientResults([]);
+      } finally {
+        setRecipientLoading(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, [recipientQuery, showRecipientDropdown, isUserView, selectedUser]);
+
+  const senderDisplayName = isAdminView
+    ? "PaymentFlow"
+    : (selectedUser?.fullName ?? "Selected User");
+
+  const availableBalance = isUserView ? (selectedUser?.balance ?? 0) : null;
+
+  function setField(field: keyof FormState, value: string | number | null) {
+    setForm((prev) => ({ ...prev, [field]: value as never }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
   }
 
+  function handleRecipientSelect(user: UserSearchResult) {
+    const fullName = `${user.firstName} ${user.lastName}`.trim();
+
+    setForm((prev) => ({
+      ...prev,
+      recipientId: user.id,
+      recipientName: fullName,
+    }));
+    setRecipientQuery(fullName);
+    setShowRecipientDropdown(false);
+    setErrors((prev) => ({ ...prev, recipientName: "" }));
+  }
+
   function validate(): boolean {
-    const e: Partial<FormState> = {};
-    if (!form.senderName.trim()) e.senderName = "Sender name is required";
-    if (!form.recipientName.trim())
-      e.recipientName = "Recipient name is required";
-    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0)
+    const e: Partial<Record<keyof FormState, string>> = {};
+    const amount = Number(form.amount);
+
+    if (!form.recipientId || !form.recipientName.trim()) {
+      e.recipientName = "Please select a recipient";
+    }
+
+    if (!form.amount || Number.isNaN(amount) || amount <= 0) {
       e.amount = "Enter a valid amount greater than 0";
+    }
+
+    if (isUserView && availableBalance !== null && amount > availableBalance) {
+      e.amount = "Amount exceeds this user's available balance";
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -57,16 +124,21 @@ export default function SendPayment() {
 
   async function handleConfirm() {
     setSubmitting(true);
+
     try {
-      const payment = await createPayment({
-        senderName: form.senderName.trim(),
-        recipientName: form.recipientName.trim(),
+      const payment = await createAuthenticatedPayment({
+        recipientId: form.recipientId!,
         amount: Number(form.amount),
-        currency: form.currency,
         referenceNote: form.referenceNote.trim() || undefined,
       });
+
       setModal({ type: "success", payment });
       setStage("form");
+      setForm(EMPTY);
+      setErrors({});
+      setRecipientQuery("");
+      setRecipientResults([]);
+      setShowRecipientDropdown(false);
     } catch (err: any) {
       setModal({
         type: "error",
@@ -81,6 +153,8 @@ export default function SendPayment() {
   function handleSendAnother() {
     setForm(EMPTY);
     setErrors({});
+    setRecipientQuery("");
+    setShowRecipientDropdown(false);
     setModal(null);
     setStage("form");
   }
@@ -101,51 +175,110 @@ export default function SendPayment() {
               marginBottom: "0.375rem",
             }}
           >
-            {stage === "form" ? "Send a Payment" : "Confirm Payment"}
+            {stage === "form"
+              ? isAdminView
+                ? "Send Funds as PaymentFlow"
+                : "Send a Payment"
+              : "Confirm Payment"}
           </p>
           <p style={{ fontSize: "0.875rem", color: "#6b7280" }}>
             {stage === "form"
-              ? "Fill in the details below to initiate a transfer"
+              ? isAdminView
+                ? "Issue demo funds from PaymentFlow to a selected user"
+                : "Fill in the details below to initiate a transfer"
               : "Please review the details before confirming"}
           </p>
         </div>
+
+        {isUserView && selectedUser && (
+          <div className="mb-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <p className="text-xs uppercase tracking-wide font-semibold text-gray-400">
+              Available Balance
+            </p>
+            <p className="mt-2 text-3xl font-black text-gray-900">
+              $
+              {availableBalance?.toLocaleString("en-CA", {
+                minimumFractionDigits: 2,
+              })}
+            </p>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="h-1.5 bg-linear-to-r from-blue-500 via-blue-400 to-indigo-500" />
 
           {stage === "form" && (
             <div className="p-8 space-y-5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Sender Name
-                </label>
-                <input
-                  value={form.senderName}
-                  onChange={(e) => set("senderName", e.target.value)}
-                  placeholder="e.g. John Smith"
-                  className={`w-full border rounded-lg px-4 py-2.5 text-sm text-gray-800 outline-none
-                    focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
-                    ${errors.senderName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
-                />
-                {errors.senderName && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.senderName}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  From
+                </p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {senderDisplayName}
+                </p>
+                {isAdminView && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Admin-issued payments display as PaymentFlow.
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Recipient Name
+                  Recipient
                 </label>
                 <input
-                  value={form.recipientName}
-                  onChange={(e) => set("recipientName", e.target.value)}
-                  placeholder="e.g. Alice Wong"
+                  value={recipientQuery}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setRecipientQuery(value);
+                    setShowRecipientDropdown(true);
+                    setForm((prev) => ({
+                      ...prev,
+                      recipientId: null,
+                      recipientName: value,
+                    }));
+                    setErrors((prev) => ({ ...prev, recipientName: "" }));
+                  }}
+                  onFocus={() => setShowRecipientDropdown(true)}
+                  placeholder="Search users by name or email"
                   className={`w-full border rounded-lg px-4 py-2.5 text-sm text-gray-800 outline-none
                     focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
                     ${errors.recipientName ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
                 />
+
+                {recipientQuery && showRecipientDropdown && (
+                  <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden">
+                    {recipientLoading ? (
+                      <div className="px-4 py-3 text-sm text-gray-500">
+                        Searching users...
+                      </div>
+                    ) : recipientResults.length > 0 ? (
+                      recipientResults.map((user) => {
+                        const fullName =
+                          `${user.firstName} ${user.lastName}`.trim();
+
+                        return (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => handleRecipientSelect(user)}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="text-sm font-medium text-gray-900">
+                              {fullName}
+                            </div>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500">
+                        No active users found.
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {errors.recipientName && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.recipientName}
@@ -157,29 +290,17 @@ export default function SendPayment() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Amount
                 </label>
-                <div className="flex gap-2">
-                  <select
-                    value={form.currency}
-                    onChange={(e) => set("currency", e.target.value)}
-                    className="border border-gray-200 hover:border-gray-300 rounded-lg px-3 py-2.5 text-sm
-                               text-gray-800 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {CURRENCIES.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.amount}
-                    onChange={(e) => set("amount", e.target.value)}
-                    placeholder="0.00"
-                    className={`flex-1 border rounded-lg px-4 py-2.5 text-sm text-gray-800 outline-none
-                      focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
-                      ${errors.amount ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
-                  />
-                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.amount}
+                  onChange={(e) => setField("amount", e.target.value)}
+                  placeholder="0.00"
+                  className={`w-full border rounded-lg px-4 py-2.5 text-sm text-gray-800 outline-none
+                    focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all
+                    ${errors.amount ? "border-red-400 bg-red-50" : "border-gray-200 hover:border-gray-300"}`}
+                />
                 {errors.amount && (
                   <p className="text-red-500 text-xs mt-1">{errors.amount}</p>
                 )}
@@ -190,7 +311,7 @@ export default function SendPayment() {
                       <span className="font-semibold">
                         High-value transfer.
                       </span>{" "}
-                      Amounts of {form.currency} $5,000 or more will be set to{" "}
+                      Amounts of $5,000 or more will be set to{" "}
                       <span className="font-semibold">PENDING</span> and require
                       admin approval before processing.
                     </p>
@@ -207,7 +328,7 @@ export default function SendPayment() {
                 </label>
                 <textarea
                   value={form.referenceNote}
-                  onChange={(e) => set("referenceNote", e.target.value)}
+                  onChange={(e) => setField("referenceNote", e.target.value)}
                   placeholder="e.g. Invoice payment, Monthly rent..."
                   rows={3}
                   className="w-full border border-gray-200 hover:border-gray-300 rounded-lg px-4 py-2.5
@@ -216,14 +337,14 @@ export default function SendPayment() {
                 />
               </div>
 
-              {form.senderName && form.recipientName && parsedAmount > 0 && (
+              {form.recipientName && parsedAmount > 0 && (
                 <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm text-blue-800">
-                  <span className="font-semibold">{form.senderName}</span>
+                  <span className="font-semibold">{senderDisplayName}</span>
                   <span className="text-blue-400 mx-2">→</span>
                   <span className="font-semibold">{form.recipientName}</span>
                   <span className="ml-2 text-blue-500">
-                    {form.currency} $
-                    {parsedAmount.toLocaleString("en-US", {
+                    $
+                    {parsedAmount.toLocaleString("en-CA", {
                       minimumFractionDigits: 2,
                     })}
                   </span>
@@ -249,7 +370,7 @@ export default function SendPayment() {
                     From
                   </span>
                   <span className="font-semibold text-gray-800">
-                    {form.senderName}
+                    {senderDisplayName}
                   </span>
                 </div>
                 <div className="flex justify-between items-center px-4 py-3 bg-white border-b border-gray-100">
@@ -265,8 +386,8 @@ export default function SendPayment() {
                     Amount
                   </span>
                   <span className="font-bold text-gray-900 text-lg">
-                    {form.currency} $
-                    {parsedAmount.toLocaleString("en-US", {
+                    $
+                    {parsedAmount.toLocaleString("en-CA", {
                       minimumFractionDigits: 2,
                     })}
                   </span>
@@ -281,12 +402,6 @@ export default function SendPayment() {
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between items-center px-4 py-3 bg-gray-50">
-                  <span className="text-xs text-gray-400 uppercase tracking-wide font-semibold">
-                    Currency
-                  </span>
-                  <span className="text-gray-600">{form.currency}</span>
-                </div>
               </div>
 
               {isHighValue && (
@@ -307,8 +422,8 @@ export default function SendPayment() {
                 <p className="text-sm text-gray-600">
                   Are you sure you want to send{" "}
                   <span className="font-semibold text-gray-900">
-                    {form.currency} $
-                    {parsedAmount.toLocaleString("en-US", {
+                    $
+                    {parsedAmount.toLocaleString("en-CA", {
                       minimumFractionDigits: 2,
                     })}
                   </span>{" "}
@@ -394,8 +509,8 @@ export default function SendPayment() {
                   <div className="flex justify-between">
                     <span className="text-gray-500">Amount</span>
                     <span className="font-semibold text-gray-800">
-                      {modal.payment.currency} $
-                      {modal.payment.amount.toLocaleString("en-US", {
+                      $
+                      {modal.payment.amount.toLocaleString("en-CA", {
                         minimumFractionDigits: 2,
                       })}
                     </span>
@@ -422,10 +537,10 @@ export default function SendPayment() {
                     Send Another
                   </button>
                   <button
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => navigate("/payments")}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
                   >
-                    Go to Dashboard
+                    Go to Payments
                   </button>
                 </div>
               </>
@@ -455,10 +570,10 @@ export default function SendPayment() {
                     Try Again
                   </button>
                   <button
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => navigate("/payments")}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
                   >
-                    Go to Dashboard
+                    Go to Payments
                   </button>
                 </div>
               </>

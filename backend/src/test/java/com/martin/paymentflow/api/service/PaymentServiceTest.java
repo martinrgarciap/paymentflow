@@ -2,10 +2,10 @@ package com.martin.paymentflow.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -13,21 +13,23 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.martin.paymentflow.api.dto.CreatePaymentRequest;
 import com.martin.paymentflow.api.dto.PaymentResponse;
 import com.martin.paymentflow.api.dto.UpdatePaymentStatusRequest;
 import com.martin.paymentflow.api.entity.Payment;
-import com.martin.paymentflow.api.enums.CurrencyCode;
+import com.martin.paymentflow.api.entity.User;
 import com.martin.paymentflow.api.enums.PaymentStatus;
 import com.martin.paymentflow.api.exception.ResourceNotFoundException;
 import com.martin.paymentflow.api.repository.PaymentRepository;
+import com.martin.paymentflow.api.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
@@ -35,152 +37,191 @@ class PaymentServiceTest {
     @Mock
     private PaymentRepository paymentRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private PaymentService paymentService;
 
-    private CreatePaymentRequest createPaymentRequest;
+    private User sender;
+    private User recipient;
 
     @BeforeEach
     void setUp() {
-        createPaymentRequest = new CreatePaymentRequest();
-        createPaymentRequest.setSenderName("John Smith");
-        createPaymentRequest.setRecipientName("Alice Wong");
-        createPaymentRequest.setAmount(new BigDecimal("1200.50"));
-        createPaymentRequest.setCurrency(CurrencyCode.CAD);
-        createPaymentRequest.setReferenceNote("Invoice payment");
+        sender = new User();
+        ReflectionTestUtils.setField(sender, "id", 1L);
+        sender.setFirstName("Martin");
+        sender.setLastName("Garcia");
+        sender.setEmail("martin@example.com");
+        sender.setPasswordHash("hashed");
+        sender.setBalance(new BigDecimal("500.00"));
+        sender.setAdmin(false);
+
+        recipient = new User();
+        ReflectionTestUtils.setField(recipient, "id", 2L);
+        recipient.setFirstName("Alice");
+        recipient.setLastName("Wong");
+        recipient.setEmail("alice@example.com");
+        recipient.setPasswordHash("hashed");
+        recipient.setBalance(new BigDecimal("300.00"));
+        recipient.setAdmin(false);
     }
 
     @Test
-    void createPayment_ShouldSetPendingStatus_AndSavePayment() {
-        Payment savedPayment = new Payment();
-        savedPayment.setTransactionId("TXN-ABC12345");
-        savedPayment.setSenderName(createPaymentRequest.getSenderName());
-        savedPayment.setRecipientName(createPaymentRequest.getRecipientName());
-        savedPayment.setAmount(createPaymentRequest.getAmount());
-        savedPayment.setCurrency(createPaymentRequest.getCurrency());
-        savedPayment.setReferenceNote(createPaymentRequest.getReferenceNote());
-        savedPayment.setStatus(PaymentStatus.COMPLETED);
-        savedPayment.setRiskFlag(false);
-        savedPayment.setCreatedAt(OffsetDateTime.now());
-        savedPayment.setUpdatedAt(OffsetDateTime.now());
+    @DisplayName("createPayment should complete immediately when sender has enough funds and amount is under threshold")
+    void createPayment_ShouldCompleteImmediately() {
+        CreatePaymentRequest request = new CreatePaymentRequest();
+        request.setRecipientId(2L);
+        request.setAmount(new BigDecimal("100.00"));
+        request.setReferenceNote("Lunch");
 
-        when(paymentRepository.save(any(Payment.class))).thenReturn(savedPayment);
+        when(userRepository.findByEmailIgnoreCase("martin@example.com")).thenReturn(Optional.of(sender));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipient));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PaymentResponse response = paymentService.createPayment(createPaymentRequest);
+        PaymentResponse response = paymentService.createPayment(request, "martin@example.com");
 
-        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
-        verify(paymentRepository).save(paymentCaptor.capture());
-
-        Payment capturedPayment = paymentCaptor.getValue();
-
-        assertEquals("John Smith", capturedPayment.getSenderName());
-        assertEquals("Alice Wong", capturedPayment.getRecipientName());
-        assertEquals(new BigDecimal("1200.50"), capturedPayment.getAmount());
-        assertEquals(CurrencyCode.CAD, capturedPayment.getCurrency());
-        assertEquals(PaymentStatus.COMPLETED, capturedPayment.getStatus());
-        assertFalse(capturedPayment.isRiskFlag());
-
-        assertEquals("TXN-ABC12345", response.getTransactionId());
+        assertEquals("Martin Garcia", response.getSenderName());
+        assertEquals("Alice Wong", response.getRecipientName());
+        assertEquals(new BigDecimal("100.00"), response.getAmount());
         assertEquals(PaymentStatus.COMPLETED, response.getStatus());
+        assertFalse(response.isRiskFlag());
+        assertNull(response.getFailureReason());
+
+        assertEquals(new BigDecimal("400.00"), sender.getBalance());
+        assertEquals(new BigDecimal("400.00"), recipient.getBalance());
     }
 
     @Test
-    void createPayment_ShouldSetRiskFlag_WhenAmountIsGreaterThan5000() {
-        createPaymentRequest.setAmount(new BigDecimal("7000.00"));
+    @DisplayName("createPayment should fail when sender has insufficient funds and amount is under threshold")
+    void createPayment_ShouldFailForInsufficientFunds() {
+        CreatePaymentRequest request = new CreatePaymentRequest();
+        request.setRecipientId(2L);
+        request.setAmount(new BigDecimal("600.00"));
+        request.setReferenceNote("Too much");
 
-        Payment savedPayment = new Payment();
-        savedPayment.setTransactionId("TXN-HIGH001");
-        savedPayment.setSenderName(createPaymentRequest.getSenderName());
-        savedPayment.setRecipientName(createPaymentRequest.getRecipientName());
-        savedPayment.setAmount(createPaymentRequest.getAmount());
-        savedPayment.setCurrency(createPaymentRequest.getCurrency());
-        savedPayment.setReferenceNote(createPaymentRequest.getReferenceNote());
-        savedPayment.setStatus(PaymentStatus.PENDING);
-        savedPayment.setRiskFlag(true);
-        savedPayment.setCreatedAt(OffsetDateTime.now());
-        savedPayment.setUpdatedAt(OffsetDateTime.now());
+        when(userRepository.findByEmailIgnoreCase("martin@example.com")).thenReturn(Optional.of(sender));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipient));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(paymentRepository.save(any(Payment.class))).thenReturn(savedPayment);
+        PaymentResponse response = paymentService.createPayment(request, "martin@example.com");
 
-        PaymentResponse response = paymentService.createPayment(createPaymentRequest);
+        assertEquals(PaymentStatus.FAILED, response.getStatus());
+        assertEquals("Insufficient funds.", response.getFailureReason());
+        assertEquals(new BigDecimal("500.00"), sender.getBalance());
+        assertEquals(new BigDecimal("300.00"), recipient.getBalance());
+    }
 
-        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
-        verify(paymentRepository).save(paymentCaptor.capture());
+    @Test
+    @DisplayName("createPayment should stay pending when amount is over approval threshold")
+    void createPayment_ShouldBePendingWhenOverThreshold() {
+        CreatePaymentRequest request = new CreatePaymentRequest();
+        request.setRecipientId(2L);
+        request.setAmount(new BigDecimal("6000.00"));
+        request.setReferenceNote("Needs approval");
 
-        Payment capturedPayment = paymentCaptor.getValue();
+        when(userRepository.findByEmailIgnoreCase("martin@example.com")).thenReturn(Optional.of(sender));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipient));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertTrue(capturedPayment.isRiskFlag());
+        PaymentResponse response = paymentService.createPayment(request, "martin@example.com");
+
+        assertEquals(PaymentStatus.PENDING, response.getStatus());
         assertTrue(response.isRiskFlag());
+        assertNull(response.getFailureReason());
+        assertEquals(new BigDecimal("500.00"), sender.getBalance());
+        assertEquals(new BigDecimal("300.00"), recipient.getBalance());
     }
 
     @Test
-    void getPaymentByTransactionId_ShouldReturnPayment_WhenFound() {
-        Payment payment = new Payment();
-        payment.setTransactionId("TXN-SEED-001");
-        payment.setSenderName("John Smith");
-        payment.setRecipientName("Alice Wong");
-        payment.setAmount(new BigDecimal("1200.50"));
-        payment.setCurrency(CurrencyCode.CAD);
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setReferenceNote("Invoice payment");
-        payment.setRiskFlag(false);
-        payment.setCreatedAt(OffsetDateTime.now());
-        payment.setUpdatedAt(OffsetDateTime.now());
+    @DisplayName("createPayment should throw when recipient is missing")
+    void createPayment_ShouldThrowWhenRecipientMissing() {
+        CreatePaymentRequest request = new CreatePaymentRequest();
+        request.setRecipientId(999L);
+        request.setAmount(new BigDecimal("100.00"));
 
-        when(paymentRepository.findByTransactionId("TXN-SEED-001")).thenReturn(Optional.of(payment));
+        when(userRepository.findByEmailIgnoreCase("martin@example.com")).thenReturn(Optional.of(sender));
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        PaymentResponse response = paymentService.getPaymentByTransactionId("TXN-SEED-001");
-
-        assertEquals("TXN-SEED-001", response.getTransactionId());
-        assertEquals("John Smith", response.getSenderName());
-        assertEquals(PaymentStatus.COMPLETED, response.getStatus());
-    }
-
-    @Test
-    void getPaymentByTransactionId_ShouldThrowException_WhenNotFound() {
-        when(paymentRepository.findByTransactionId("TXN-MISSING")).thenReturn(Optional.empty());
-
-        assertThrows(
+        ResourceNotFoundException ex = assertThrows(
                 ResourceNotFoundException.class,
-                () -> paymentService.getPaymentByTransactionId("TXN-MISSING")
+                () -> paymentService.createPayment(request, "martin@example.com")
         );
+
+        assertTrue(ex.getMessage().contains("Recipient not found"));
     }
 
     @Test
-    void updatePaymentStatus_ShouldUpdateStatus_WhenPaymentExists() {
+    @DisplayName("updatePaymentStatus should complete a pending payment and move balances")
+    void updatePaymentStatus_ShouldCompletePendingPayment() {
         Payment payment = new Payment();
-        payment.setTransactionId("TXN-SEED-001");
-        payment.setSenderName("John Smith");
+        payment.setTransactionId("TXN-12345678");
+        payment.setSender(sender);
+        payment.setRecipient(recipient);
+        payment.setSenderName("Martin Garcia");
         payment.setRecipientName("Alice Wong");
-        payment.setAmount(new BigDecimal("1200.50"));
-        payment.setCurrency(CurrencyCode.CAD);
+        payment.setAmount(new BigDecimal("200.00"));
         payment.setStatus(PaymentStatus.PENDING);
-        payment.setReferenceNote("Invoice payment");
-        payment.setRiskFlag(false);
+        payment.setReferenceNote("Approval");
+        payment.setRiskFlag(true);
         payment.setCreatedAt(OffsetDateTime.now());
         payment.setUpdatedAt(OffsetDateTime.now());
 
         UpdatePaymentStatusRequest request = new UpdatePaymentStatusRequest();
         request.setStatus(PaymentStatus.COMPLETED);
 
-        Payment updatedPayment = new Payment();
-        updatedPayment.setTransactionId("TXN-SEED-001");
-        updatedPayment.setSenderName("John Smith");
-        updatedPayment.setRecipientName("Alice Wong");
-        updatedPayment.setAmount(new BigDecimal("1200.50"));
-        updatedPayment.setCurrency(CurrencyCode.CAD);
-        updatedPayment.setStatus(PaymentStatus.COMPLETED);
-        updatedPayment.setReferenceNote("Invoice payment");
-        updatedPayment.setRiskFlag(false);
-        updatedPayment.setCreatedAt(payment.getCreatedAt());
-        updatedPayment.setUpdatedAt(OffsetDateTime.now());
+        when(paymentRepository.findByTransactionId("TXN-12345678")).thenReturn(Optional.of(payment));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(paymentRepository.findByTransactionId("TXN-SEED-001")).thenReturn(Optional.of(payment));
-        when(paymentRepository.save(any(Payment.class))).thenReturn(updatedPayment);
-
-        PaymentResponse response = paymentService.updatePaymentStatus("TXN-SEED-001", request);
+        PaymentResponse response = paymentService.updatePaymentStatus("TXN-12345678", request);
 
         assertEquals(PaymentStatus.COMPLETED, response.getStatus());
-        verify(paymentRepository).save(payment);
+        assertNull(response.getFailureReason());
+        assertEquals(new BigDecimal("300.00"), sender.getBalance());
+        assertEquals(new BigDecimal("500.00"), recipient.getBalance());
+    }
+
+    @Test
+    @DisplayName("createPayment should throw when sender is deactivated")
+    void createPayment_ShouldThrow_WhenSenderIsDeactivated() {
+        sender.setDeactivated(true);
+
+        CreatePaymentRequest request = new CreatePaymentRequest();
+        request.setRecipientId(2L);
+        request.setAmount(new BigDecimal("50.00"));
+        request.setReferenceNote("Blocked sender");
+
+        when(userRepository.findByEmailIgnoreCase("martin@example.com")).thenReturn(Optional.of(sender));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipient));
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> paymentService.createPayment(request, "martin@example.com")
+        );
+
+        assertEquals("Deactivated users cannot send payments.", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("createPayment should throw when recipient is deactivated")
+    void createPayment_ShouldThrow_WhenRecipientIsDeactivated() {
+        recipient.setDeactivated(true);
+
+        CreatePaymentRequest request = new CreatePaymentRequest();
+        request.setRecipientId(2L);
+        request.setAmount(new BigDecimal("50.00"));
+        request.setReferenceNote("Blocked recipient");
+
+        when(userRepository.findByEmailIgnoreCase("martin@example.com")).thenReturn(Optional.of(sender));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipient));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> paymentService.createPayment(request, "martin@example.com")
+        );
+
+        assertEquals("Cannot send payments to a deactivated user.", ex.getMessage());
     }
 }

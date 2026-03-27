@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/formatDate";
 import type { Payment, PaymentStatus } from "@/types/payment";
 import { useMemo, useState } from "react";
 
@@ -12,15 +13,6 @@ export function statusBadgeClass(status: PaymentStatus): string {
     case "REVERSED":
       return "bg-blue-400";
   }
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("en-CA", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 type SortKey =
@@ -142,6 +134,9 @@ interface Props {
   reloading: boolean;
   onPageChange: (p: number) => void;
   onAction: (payment: Payment) => void;
+  deactivatedUserNames?: string[];
+  isUserLensView?: boolean;
+  selectedUserFullName?: string;
 }
 
 export default function TransactionsTable({
@@ -152,6 +147,9 @@ export default function TransactionsTable({
   reloading,
   onPageChange,
   onAction,
+  deactivatedUserNames,
+  isUserLensView = false,
+  selectedUserFullName,
 }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -162,6 +160,28 @@ export default function TransactionsTable({
       setSortKey(key);
       setSortDir("desc");
     }
+  }
+
+  function getDisplayName(name: string, deactivatedUserNamesList: string[]) {
+    return deactivatedUserNamesList.includes(name)
+      ? `Deactivated User (${name})`
+      : name;
+  }
+
+  function getDirection(payment: Payment) {
+    if (!selectedUserFullName) return "";
+    return payment.senderName === selectedUserFullName ? "Sent" : "Received";
+  }
+
+  function getOtherUser(payment: Payment) {
+    if (!selectedUserFullName) return "";
+
+    const otherName =
+      payment.senderName === selectedUserFullName
+        ? payment.recipientName
+        : payment.senderName;
+
+    return getDisplayName(otherName, deactivatedUserNames ?? []);
   }
 
   const sorted = useMemo(() => {
@@ -213,15 +233,29 @@ export default function TransactionsTable({
               >
                 Transaction ID <SortIcon col="transactionId" />
               </th>
-              <th onClick={() => handleSort("senderName")} className={thClass}>
-                Sender <SortIcon col="senderName" />
-              </th>
-              <th
-                onClick={() => handleSort("recipientName")}
-                className={thClass}
-              >
-                Recipient <SortIcon col="recipientName" />
-              </th>
+
+              {isUserLensView ? (
+                <>
+                  <th className={thClass}>Other User</th>
+                  <th className={thClass}>Direction</th>
+                </>
+              ) : (
+                <>
+                  <th
+                    onClick={() => handleSort("senderName")}
+                    className={thClass}
+                  >
+                    Sender <SortIcon col="senderName" />
+                  </th>
+                  <th
+                    onClick={() => handleSort("recipientName")}
+                    className={thClass}
+                  >
+                    Recipient <SortIcon col="recipientName" />
+                  </th>
+                </>
+              )}
+
               <th onClick={() => handleSort("amount")} className={thClass}>
                 Amount <SortIcon col="amount" />
               </th>
@@ -245,7 +279,10 @@ export default function TransactionsTable({
           <tbody className="divide-y divide-gray-100">
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-gray-400">
+                <td
+                  colSpan={isUserLensView ? 8 : 9}
+                  className="text-center py-12 text-gray-400"
+                >
                   No transactions found
                 </td>
               </tr>
@@ -261,14 +298,43 @@ export default function TransactionsTable({
                   <td className="px-3 py-2 font-mono text-blue-600 font-medium whitespace-nowrap">
                     {p.transactionId}
                   </td>
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
-                    {p.senderName}
-                  </td>
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
-                    {p.recipientName}
-                  </td>
+
+                  {isUserLensView ? (
+                    <>
+                      <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                        {getOtherUser(p)}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                            getDirection(p) === "Received"
+                              ? "bg-green-100 text-green-600"
+                              : "bg-blue-100 text-blue-600"
+                          }`}
+                        >
+                          {getDirection(p)}
+                        </span>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                        {getDisplayName(
+                          p.senderName,
+                          deactivatedUserNames ?? [],
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                        {getDisplayName(
+                          p.recipientName,
+                          deactivatedUserNames ?? [],
+                        )}
+                      </td>
+                    </>
+                  )}
+
                   <td className="px-3 py-2 text-gray-800 font-medium whitespace-nowrap">
-                    <span className="text-gray-400 mr-1">{p.currency}</span>$
+                    $
                     {p.amount.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                     })}
@@ -293,7 +359,7 @@ export default function TransactionsTable({
                   <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
                     {formatDate(p.updatedAt)}
                   </td>
-                  <td className="sticky right-0 z-10 bg-slate-100 px-3 py-2 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)">
+                  <td className="sticky right-0 z-10 bg-slate-100 px-3 py-2 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -306,10 +372,7 @@ export default function TransactionsTable({
                       ${p.status === "REVERSED" ? "bg-gray-100 hover:bg-gray-200 text-gray-600" : ""}
                     `}
                     >
-                      {p.status === "PENDING" ? "Review" : ""}
-                      {p.status === "COMPLETED" ? "Details" : ""}
-                      {p.status === "FAILED" ? "Details" : ""}
-                      {p.status === "REVERSED" ? "Details" : ""}
+                      {p.status === "PENDING" ? "Review" : "Details"}
                     </button>
                   </td>
                 </tr>

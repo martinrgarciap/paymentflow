@@ -1,17 +1,29 @@
 package com.martin.paymentflow.api.controller;
 
-import com.martin.paymentflow.api.dto.CreatePaymentRequest;
-import com.martin.paymentflow.api.dto.PaymentResponse;
-import com.martin.paymentflow.api.dto.UpdatePaymentStatusRequest;
-import com.martin.paymentflow.api.enums.PaymentStatus;
-import com.martin.paymentflow.api.service.PaymentService;
-import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.martin.paymentflow.api.dto.CreatePaymentRequest;
+import com.martin.paymentflow.api.dto.PaymentResponse;
+import com.martin.paymentflow.api.dto.UpdatePaymentStatusRequest;
+import com.martin.paymentflow.api.enums.PaymentStatus;
+import com.martin.paymentflow.api.service.PaymentService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -25,8 +37,11 @@ public class PaymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PaymentResponse createPayment(@Valid @RequestBody CreatePaymentRequest request) {
-        return paymentService.createPayment(request);
+    public PaymentResponse createPayment(
+            @Valid @RequestBody CreatePaymentRequest request,
+            Authentication authentication
+    ) {
+        return paymentService.createPayment(request, authentication.getName());
     }
 
     @GetMapping
@@ -44,10 +59,11 @@ public class PaymentController {
         return paymentService.getPaymentByTransactionId(transactionId);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{transactionId}/status")
     public PaymentResponse updatePaymentStatus(
-        @PathVariable String transactionId,
-        @Valid @RequestBody UpdatePaymentStatusRequest request
+            @PathVariable String transactionId,
+            @Valid @RequestBody UpdatePaymentStatusRequest request
     ) {
         return paymentService.updatePaymentStatus(transactionId, request);
     }
@@ -74,5 +90,15 @@ public class PaymentController {
         Pageable pageable
     ) {
         return paymentService.filterPayments(transactionId, senderName, recipientName, status, riskFlag, pageable);
+    }
+
+    @GetMapping("/me")
+    public Page<PaymentResponse> getMyPayments(
+            @RequestParam(defaultValue = "all") String direction,
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable,
+            Authentication authentication
+    ) {
+        return paymentService.getMyPayments(authentication.getName(), direction, pageable);
     }
 }
