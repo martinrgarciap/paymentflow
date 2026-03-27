@@ -1,7 +1,7 @@
 import type { PagedResponse, Payment, PaymentStatus } from "@/types/payment";
 import { apiFetch, readJsonOrThrow } from "./apiClient";
 
-const BASE = `${import.meta.env.VITE_API_BASE_URL}/api/payments`;
+const BASE = "/api/payments";
 
 export async function fetchPayments(
   page = 0,
@@ -9,20 +9,26 @@ export async function fetchPayments(
   status?: PaymentStatus,
   riskFlag?: boolean,
 ): Promise<PagedResponse<Payment>> {
-  const query = new URLSearchParams({ page: String(page), size: String(size) });
+  const query = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+
   if (status) query.append("status", status);
   if (riskFlag !== undefined) query.append("riskFlag", String(riskFlag));
-  const res = await fetch(`${BASE}?${query}`);
-  if (!res.ok) throw new Error("Failed to fetch payments");
-  return res.json();
+
+  const res = await apiFetch(`${BASE}?${query}`);
+  return readJsonOrThrow<PagedResponse<Payment>>(
+    res,
+    "Failed to fetch payments",
+  );
 }
 
 export async function fetchPaymentById(
   transactionId: string,
 ): Promise<Payment> {
-  const res = await fetch(`${BASE}/${transactionId}`);
-  if (!res.ok) throw new Error("Failed to fetch payment");
-  return res.json();
+  const res = await apiFetch(`${BASE}/${transactionId}`);
+  return readJsonOrThrow<Payment>(res, "Failed to fetch payment");
 }
 
 export async function searchPayments(
@@ -33,15 +39,19 @@ export async function searchPayments(
   riskFlag?: boolean,
 ): Promise<PagedResponse<Payment>> {
   const params = new URLSearchParams({
-    query: query,
+    query,
     page: String(page),
     size: String(size),
   });
+
   if (status) params.append("status", status);
   if (riskFlag !== undefined) params.append("riskFlag", String(riskFlag));
-  const res = await fetch(`${BASE}/search?${params}`);
-  if (!res.ok) throw new Error("Failed to search payments");
-  return res.json();
+
+  const res = await apiFetch(`${BASE}/search?${params}`);
+  return readJsonOrThrow<PagedResponse<Payment>>(
+    res,
+    "Failed to search payments",
+  );
 }
 
 export async function filterPayments(params: {
@@ -53,16 +63,22 @@ export async function filterPayments(params: {
   size?: number;
 }): Promise<PagedResponse<Payment>> {
   const query = new URLSearchParams();
+
   if (params.transactionId) query.append("transactionId", params.transactionId);
   if (params.senderName) query.append("senderName", params.senderName);
   if (params.recipientName) query.append("recipientName", params.recipientName);
-  if (params.status && params.status !== "All")
+  if (params.status && params.status !== "All") {
     query.append("status", params.status);
+  }
+
   query.append("page", String(params.page ?? 0));
   query.append("size", String(params.size ?? 50));
-  const res = await fetch(`${BASE}/filter?${query}`);
-  if (!res.ok) throw new Error("Failed to filter payments");
-  return res.json();
+
+  const res = await apiFetch(`${BASE}/filter?${query}`);
+  return readJsonOrThrow<PagedResponse<Payment>>(
+    res,
+    "Failed to filter payments",
+  );
 }
 
 export async function createPayment(data: {
@@ -71,13 +87,12 @@ export async function createPayment(data: {
   amount: number;
   referenceNote?: string;
 }): Promise<Payment> {
-  const res = await fetch(BASE, {
+  const res = await apiFetch(BASE, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create payment");
-  return res.json();
+
+  return readJsonOrThrow<Payment>(res, "Failed to create payment");
 }
 
 export async function createAuthenticatedPayment(data: {
@@ -85,7 +100,7 @@ export async function createAuthenticatedPayment(data: {
   amount: number;
   referenceNote?: string;
 }): Promise<Payment> {
-  const res = await apiFetch("/api/payments", {
+  const res = await apiFetch(BASE, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -97,27 +112,25 @@ export async function updatePaymentStatus(
   transactionId: string,
   status: PaymentStatus,
 ): Promise<Payment> {
-  const res = await fetch(`${BASE}/${transactionId}/status`, {
+  const res = await apiFetch(`${BASE}/${transactionId}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
   });
-  if (!res.ok) throw new Error("Failed to update payment status");
-  return res.json();
+
+  return readJsonOrThrow<Payment>(res, "Failed to update payment status");
 }
 
 export async function fetchStatusCounts(
   search?: string,
 ): Promise<Record<string, number>> {
-  const statuses = [
+  const statuses: PaymentStatus[] = [
     "PENDING",
     "COMPLETED",
     "FAILED",
     "REVERSED",
-  ] as PaymentStatus[];
+  ];
 
   const allResults = await Promise.all([
-    // Total count per status
     ...statuses.map((s) =>
       search?.trim()
         ? searchPayments(search.trim(), 0, 1, s).then((r) => ({
@@ -129,7 +142,6 @@ export async function fetchStatusCounts(
             count: r.totalElements,
           })),
     ),
-    // Flagged count per status
     ...statuses.map((s) =>
       search?.trim()
         ? searchPayments(search.trim(), 0, 1, s, true).then((r) => ({
@@ -141,7 +153,6 @@ export async function fetchStatusCounts(
             count: r.totalElements,
           })),
     ),
-    // Total flagged across all statuses
     search?.trim()
       ? searchPayments(search.trim(), 0, 1, undefined, true).then((r) => ({
           key: "ALL_FLAGGED",
@@ -157,5 +168,6 @@ export async function fetchStatusCounts(
   allResults.forEach((r) => {
     counts[r.key] = r.count;
   });
+
   return counts;
 }
