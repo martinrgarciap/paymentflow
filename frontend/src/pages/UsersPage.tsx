@@ -432,8 +432,8 @@ export default function UsersPage() {
 
       {detailsUser && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100">
+          <div className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="px-6 py-5 border-b border-gray-100 shrink-0">
               <div className="text-xl font-black text-gray-900">
                 User Details
               </div>
@@ -442,7 +442,7 @@ export default function UsersPage() {
               </p>
             </div>
 
-            <div className="px-6 py-5 space-y-6">
+            <div className="px-6 py-5 space-y-6 overflow-y-auto flex-1 min-h-0">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
@@ -577,8 +577,8 @@ export default function UsersPage() {
               )}
             </div>
 
-            <div className="px-6 pb-6 flex flex-col md:flex-row gap-3 md:justify-between">
-              <div className="flex gap-3">
+            <div className="px-6 py-4 border-t border-gray-100 bg-white shrink-0 flex flex-col md:flex-row gap-3 md:justify-between">
+              <div className="flex gap-2 flex-nowrap">
                 <button
                   onClick={handleSaveEdit}
                   disabled={savingEdit}
