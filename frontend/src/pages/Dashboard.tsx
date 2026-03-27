@@ -61,41 +61,6 @@ const STAT_CARDS = [
   },
 ];
 
-const USER_STAT_CARDS = [
-  {
-    label: "Balance",
-    key: "balance",
-    icon: "$",
-    colorFrom: "#3b82f6",
-    colorTo: "#1d4ed8",
-    borderColor: "ring-blue-500",
-  },
-  {
-    label: "All",
-    key: "all",
-    icon: "⊞",
-    colorFrom: "#2563eb",
-    colorTo: "#1d4ed8",
-    borderColor: "ring-blue-500",
-  },
-  {
-    label: "Received",
-    key: "received",
-    icon: "↓",
-    colorFrom: "#22c55e",
-    colorTo: "#15803d",
-    borderColor: "ring-green-500",
-  },
-  {
-    label: "Sent",
-    key: "sent",
-    icon: "↑",
-    colorFrom: "#8b5cf6",
-    colorTo: "#6d28d9",
-    borderColor: "ring-purple-400",
-  },
-] as const;
-
 async function fetchPage(
   page: number,
   size: number,

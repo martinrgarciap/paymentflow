@@ -1,6 +1,6 @@
 import { useDemoSession } from "@/context/DemoSessionContext";
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 interface NavItem {
   to: string;
@@ -28,12 +28,17 @@ export default function Navbar() {
   return (
     <nav className="bg-[#1e3a5f] text-white shadow-lg">
       <div className="px-6 py-0 flex items-center justify-between">
-        <div className="flex items-center gap-2 font-bold text-lg py-4">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black shadow-md">
-            P
+        <Link
+          to="/payments"
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
+          <div className="flex items-center gap-2 font-bold text-lg py-4">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black shadow-md">
+              P
+            </div>
+            <span className="tracking-tight">PaymentFlow</span>
           </div>
-          <span className="tracking-tight">PaymentFlow</span>
-        </div>
+        </Link>
 
         <div className="hidden md:flex h-full">
           {navItems.map((item) => (
