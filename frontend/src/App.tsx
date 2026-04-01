@@ -2,8 +2,8 @@ import AdminLensBar from "@/components/AdminLensBar";
 import Navbar from "@/components/Navbar";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DemoSessionProvider } from "@/context/DemoSessionContext";
-import Dashboard from "@/pages/Dashboard";
-import SendPayment from "@/pages/SendPayment";
+import DashboardPage from "@/pages/DashboardPage";
+import SendPaymentPage from "@/pages/SendPaymentPage";
 import SettingsPage from "@/pages/SettingsPage";
 import UsersPage from "@/pages/UsersPage";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -26,8 +26,8 @@ function AppShell() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Navigate to="/payments" replace />} />
-        <Route path="/payments" element={<Dashboard />} />
-        <Route path="/make-payment" element={<SendPayment />} />
+        <Route path="/payments" element={<DashboardPage />} />
+        <Route path="/make-payment" element={<SendPaymentPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/create-user" element={<CreateUserPage />} />

@@ -1,51 +1,112 @@
 import { useDemoSession } from "@/context/DemoSessionContext";
 import { updateUser } from "@/services/userService";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+interface SettingsFormState {
+  firstName: string;
+  lastName: string;
+}
+
+type FeedbackState =
+  | { type: "success"; message: string }
+  | { type: "error"; message: string }
+  | null;
+
+const EMPTY_FORM: SettingsFormState = {
+  firstName: "",
+  lastName: "",
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function formatCurrency(amount: number): string {
+  return amount.toLocaleString("en-CA", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 export default function SettingsPage() {
   const { selectedUser, isUserView, refreshSelectedUser } = useDemoSession();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [form, setForm] = useState<SettingsFormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
 
   useEffect(() => {
-    if (!selectedUser) return;
+    if (!selectedUser) {
+      return;
+    }
 
-    setFirstName(selectedUser.firstName ?? "");
-    setLastName(selectedUser.lastName ?? "");
-    setMessage("");
-    setError("");
+    setForm({
+      firstName: selectedUser.firstName ?? "",
+      lastName: selectedUser.lastName ?? "",
+    });
+
+    setFeedback(null);
   }, [selectedUser?.id]);
 
-  async function handleSave() {
-    if (!selectedUser) return;
+  const hasChanges = useMemo(() => {
+    if (!selectedUser) {
+      return false;
+    }
 
-    const trimmedFirstName = firstName.trim();
-    const trimmedLastName = lastName.trim();
+    return (
+      form.firstName.trim() !== (selectedUser.firstName ?? "") ||
+      form.lastName.trim() !== (selectedUser.lastName ?? "")
+    );
+  }, [form, selectedUser]);
+
+  function updateField<K extends keyof SettingsFormState>(
+    field: K,
+    value: SettingsFormState[K],
+  ) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+    setFeedback(null);
+  }
+
+  async function handleSave() {
+    if (!selectedUser) {
+      return;
+    }
+
+    const trimmedFirstName = form.firstName.trim();
+    const trimmedLastName = form.lastName.trim();
 
     if (!trimmedFirstName || !trimmedLastName) {
-      setError("Please enter both a first and last name");
-      setMessage("");
+      setFeedback({
+        type: "error",
+        message: "Please enter both a first and last name",
+      });
       return;
     }
 
     try {
       setSaving(true);
-      setError("");
-      setMessage("");
+      setFeedback(null);
 
-      const updated = await updateUser(selectedUser.id, {
+      const updatedUser = await updateUser(selectedUser.id, {
         firstName: trimmedFirstName,
         lastName: trimmedLastName,
       });
 
-      refreshSelectedUser(updated);
-      setMessage("Settings updated successfully.");
-    } catch {
-      setError("Failed to update settings");
+      refreshSelectedUser(updatedUser);
+
+      setFeedback({
+        type: "success",
+        message: "Settings updated successfully.",
+      });
+    } catch (error: unknown) {
+      setFeedback({
+        type: "error",
+        message: getErrorMessage(error, "Failed to update settings."),
+      });
     } finally {
       setSaving(false);
     }
@@ -54,9 +115,9 @@ export default function SettingsPage() {
   if (!isUserView || !selectedUser) {
     return (
       <div className="bg-[#f0f4f8] p-6">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl mx-auto">
+        <div className="mx-auto max-w-2xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="text-2xl font-black text-gray-900">Settings</div>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="mt-2 text-sm text-gray-500">
             Switch to a user lens view to see account settings.
           </p>
         </div>
@@ -65,7 +126,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="bg-[#f0f4f8] p-6 space-y-4">
+    <div className="space-y-4 bg-[#f0f4f8] p-6">
       <div className="flex flex-col gap-1">
         <div className="text-3xl font-black text-gray-900">
           Account Settings
@@ -75,85 +136,84 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="mx-auto max-w-2xl bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="h-1.5 bg-linear-to-r from-blue-500 via-blue-400 to-indigo-500" />
 
-        <div className="p-6 space-y-5">
+        <div className="space-y-5 p-6">
           <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
                 First Name
               </label>
               <input
-                value={firstName}
-                onChange={(e) => {
-                  setFirstName(e.target.value);
-                  setError("");
-                  setMessage("");
-                }}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={form.firstName}
+                onChange={(event) =>
+                  updateField("firstName", event.target.value)
+                }
+                className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter first name"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Last Name
               </label>
               <input
-                value={lastName}
-                onChange={(e) => {
-                  setLastName(e.target.value);
-                  setError("");
-                  setMessage("");
-                }}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={form.lastName}
+                onChange={(event) =>
+                  updateField("lastName", event.target.value)
+                }
+                className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-transparent focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter last name"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Email
             </label>
             <input
               value={selectedUser.email}
               readOnly
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-500 bg-gray-50 cursor-not-allowed"
+              className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Current Balance
             </label>
             <input
-              value={`$${selectedUser.balance.toLocaleString("en-CA", {
-                minimumFractionDigits: 2,
-              })}`}
+              value={`$${formatCurrency(selectedUser.balance)}`}
               readOnly
-              className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-500 bg-gray-50 cursor-not-allowed"
+              className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500"
             />
           </div>
 
-          {message && (
-            <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-              {message}
-            </div>
-          )}
-
-          {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-              {error}
+          {feedback && (
+            <div
+              className={`rounded-lg px-3 py-2 text-sm ${
+                feedback.type === "success"
+                  ? "border border-green-200 bg-green-50 text-green-700"
+                  : "border border-red-200 bg-red-50 text-red-600"
+              }`}
+            >
+              {feedback.message}
             </div>
           )}
 
           <div className="flex justify-end">
             <button
               onClick={handleSave}
-              disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50"
+              disabled={
+                saving ||
+                !hasChanges ||
+                !form.firstName.trim() ||
+                !form.lastName.trim()
+              }
+              className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
