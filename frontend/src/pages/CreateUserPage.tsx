@@ -143,9 +143,9 @@ export default function CreateUserPage() {
     <div className="min-h-screen bg-[#f0f4f8]">
       <div className="mx-auto max-w-lg px-4 pb-16 pt-10">
         <div className="mb-6">
-          <h1 className="text-[1.75rem] font-black leading-tight text-gray-900">
+          <div className="text-[1.75rem] font-black leading-tight text-gray-900">
             {stage === "form" ? "Create User" : "Confirm User Details"}
-          </h1>
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             {stage === "form"
               ? "Create a new PaymentFlow user account."
