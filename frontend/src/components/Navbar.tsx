@@ -1,35 +1,65 @@
 import { useDemoSession } from "@/context/DemoSessionContext";
+import {
+  ExternalLink,
+  Github,
+  Home,
+  LayoutDashboard,
+  Menu,
+  Send,
+  Settings,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 
 interface NavItem {
   to: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
 }
+
+const GITHUB_URL = "https://github.com/martinrgarciap/paymentflow";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAdminView } = useDemoSession();
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
 
-  const navItems: NavItem[] = isAdminView
+  const consoleNavItems: NavItem[] = isAdminView
     ? [
-        { to: "/payments", label: "Payments", icon: "⊞" },
-        { to: "/make-payment", label: "Make Payment", icon: "↗" },
-        { to: "/users", label: "Users", icon: "👥" },
-        { to: "/create-user", label: "Create User", icon: "+" },
+        { to: "/", label: "Home", icon: Home },
+        { to: "/payments", label: "Payments", icon: LayoutDashboard },
+        { to: "/make-payment", label: "Make Payment", icon: Send },
+        { to: "/users", label: "Users", icon: Users },
+        { to: "/create-user", label: "Create User", icon: UserPlus },
       ]
     : [
-        { to: "/payments", label: "Payments", icon: "⊞" },
-        { to: "/make-payment", label: "Make Payment", icon: "↗" },
-        { to: "/settings", label: "Settings", icon: "⚙" },
+        { to: "/", label: "Home", icon: Home },
+        { to: "/payments", label: "Payments", icon: LayoutDashboard },
+        { to: "/make-payment", label: "Make Payment", icon: Send },
+        { to: "/settings", label: "Settings", icon: Settings },
       ];
+
+  const navItems: NavItem[] = isHomePage
+    ? [
+        { to: "/", label: "Home", icon: Home },
+        {
+          to: "/payments",
+          label: "Payment Console",
+          icon: LayoutDashboard,
+        },
+      ]
+    : consoleNavItems;
 
   return (
     <nav className="bg-[#1e3a5f] text-white shadow-lg">
       <div className="px-6 py-0 flex items-center justify-between">
         <Link
-          to="/payments"
+          to="/"
           style={{ textDecoration: "none", color: "inherit" }}
         >
           <div className="flex items-center gap-2 font-bold text-lg py-4">
@@ -41,10 +71,11 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex h-full">
-          {navItems.map((item) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
-              key={item.to}
-              to={item.to}
+              key={to}
+              to={to}
+              end={to === "/"}
               className={({ isActive }) =>
                 `flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors duration-150 ${
                   isActive
@@ -53,39 +84,37 @@ export default function Navbar() {
                 }`
               }
             >
-              <span>{item.icon}</span> {item.label}
+              <Icon size={15} /> {label}
             </NavLink>
           ))}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 border-b-2 border-transparent px-4 py-4 text-sm font-medium text-gray-400 transition-colors duration-150 hover:border-gray-500 hover:text-gray-200"
+          >
+            <Github size={15} /> GitHub <ExternalLink size={12} />
+          </a>
         </div>
 
         <button
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          type="button"
+          aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+          aria-expanded={menuOpen}
+          className="flex h-10 w-10 items-center justify-center md:hidden"
           onClick={() => setMenuOpen((prev) => !prev)}
         >
-          <span
-            className={`block w-5 h-0.5 bg-white transition-all duration-200 ${
-              menuOpen ? "rotate-45 translate-y-2" : ""
-            }`}
-          />
-          <span
-            className={`block w-5 h-0.5 bg-white transition-all duration-200 ${
-              menuOpen ? "opacity-0" : ""
-            }`}
-          />
-          <span
-            className={`block w-5 h-0.5 bg-white transition-all duration-200 ${
-              menuOpen ? "-rotate-45 -translate-y-2" : ""
-            }`}
-          />
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {menuOpen && (
         <div className="md:hidden border-t border-white/10">
-          {navItems.map((item) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
-              key={item.to}
-              to={item.to}
+              key={to}
+              to={to}
+              end={to === "/"}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors ${
@@ -95,9 +124,18 @@ export default function Navbar() {
                 }`
               }
             >
-              <span>{item.icon}</span> {item.label}
+              <Icon size={17} /> {label}
             </NavLink>
           ))}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5"
+          >
+            <Github size={17} /> GitHub <ExternalLink size={13} />
+          </a>
         </div>
       )}
     </nav>
